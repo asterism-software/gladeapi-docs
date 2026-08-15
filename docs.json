@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "name": "Glade API",
-  "theme": "luma",
+  "theme": "almond",
   "colors": {
     "primary": "#447B39",
     "light": "#8AB54C",
@@ -94,6 +94,16 @@
     ]
   },
   "navbar": {
+    "links": [
+      {
+        "label": "Status",
+        "href": "https://gladeapi.com/status"
+      },
+      {
+        "label": "Support",
+        "href": "https://gladeapi.com/contact"
+      }
+    ],
     "primary": {
       "type": "button",
       "label": "Get API Key",
