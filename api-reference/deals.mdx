@@ -52,7 +52,7 @@ A successful response returns `data.amazonDeals.productResults` containing an ar
               Canonical Amazon product page URL.
             </ResponseField>
             <ResponseField name="asin" type="string">
-              Amazon Standard Identification Number for the product.
+              Amazon Standard Identification Number for the product. Matches the pattern `^[A-Z0-9]{10}$`.
             </ResponseField>
             <ResponseField name="price" type="object">
               Standard product price object.
@@ -123,13 +123,13 @@ A successful response returns `data.amazonDeals.productResults` containing an ar
             <ResponseField name="dealIsLightningDeal" type="boolean">
               `true` if this is a time-limited lightning deal.
             </ResponseField>
-            <ResponseField name="dealBadge" type="string | null">
-              Promotional badge label if present (e.g., `"Deal of the Day"`), otherwise `null`.
+            <ResponseField name="dealBadge" type="string">
+              Promotional badge label if present (e.g., `"Deal of the Day"`).
             </ResponseField>
-            <ResponseField name="dealStartTime" type="string | null">
+            <ResponseField name="dealStartTime" type="string">
               ISO 8601 timestamp for when the deal starts. Present for lightning deals.
             </ResponseField>
-            <ResponseField name="dealEndTime" type="string | null">
+            <ResponseField name="dealEndTime" type="string">
               ISO 8601 timestamp for when the deal ends. Present for lightning deals.
             </ResponseField>
           </Expandable>
@@ -203,9 +203,9 @@ A successful response returns `data.amazonDeals.productResults` containing an ar
             "dealPercentOff": 34,
             "dealType": "BEST_DEAL",
             "dealIsLightningDeal": false,
-            "dealBadge": null,
-            "dealStartTime": null,
-            "dealEndTime": null
+            "dealBadge": "",
+            "dealStartTime": "",
+            "dealEndTime": ""
           },
           {
             "title": "Echo Dot (5th Gen) Smart Speaker with Alexa — Charcoal",
@@ -226,8 +226,8 @@ A successful response returns `data.amazonDeals.productResults` containing an ar
               "currency": "USD",
               "display": "$49.99"
             },
-            "dealId": "a1b2c3d4-5678-90ef-ghij-klmnopqrstuv",
-            "dealUrl": "https://www.amazon.com/deals/a1b2c3d4-5678-90ef-ghij-klmnopqrstuv",
+            "dealId": "a1b2c3d4-5678-90ef-ab12-klmnopqrstuv",
+            "dealUrl": "https://www.amazon.com/deals/a1b2c3d4-5678-90ef-ab12-klmnopqrstuv",
             "dealPrice": {
               "symbol": "$",
               "value": 22.99,
@@ -271,15 +271,18 @@ A successful response returns `data.amazonDeals.productResults` containing an ar
 
 ## Error handling
 
-If the `domain` value is not one of the supported marketplace codes, or if pagination parameters are negative, the API returns a `400` error. Ensure your `API-KEY` is included in every request.
+If the `domain` value is not one of the supported marketplace codes, or if pagination parameters are invalid, the API returns a `400` error. Ensure your `API-KEY` is included in every request.
 
 ```json
 {
-  "error": {
-    "code": "BAD_REQUEST",
-    "message": "Invalid domain value. Supported domains: US, UK, CA, DE, FR, IT, ES, AU, IN, MX, BR, JP, PL.",
-    "status": 400
-  }
+  "success": false,
+  "errors": [
+    {
+      "code": "BAD_REQUEST",
+      "message": "Invalid domain value. Supported domains: US, UK, CA, DE, FR, IT, ES, AU, IN, MX, BR, JP, PL.",
+      "path": "domain"
+    }
+  ]
 }
 ```
 
@@ -287,5 +290,6 @@ If the `domain` value is not one of the supported marketplace codes, or if pagin
 |--------|---------|
 | `400` | Missing or invalid query parameters |
 | `401` | Missing or invalid `API-KEY` / Bearer token |
+| `402` | Plan limit reached or payment required |
 | `429` | Rate limit exceeded |
-| `500` | Upstream Amazon error or internal server error |
+| `502` | Upstream Amazon error or bad gateway |

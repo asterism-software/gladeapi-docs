@@ -1,7 +1,7 @@
 ---
-title: "ASIN and GTIN Conversion Endpoints"
+title: "Amazon ASIN ↔ GTIN Conversion — Lookup Endpoints"
 sidebarTitle: "GTIN / ASIN Lookup"
-description: "Convert between Amazon ASINs and GTINs (barcodes) using two lookup endpoints. Useful for cross-referencing Amazon with retail databases and product catalogs."
+description: "Translate between Amazon ASINs and GTINs (barcodes) with two lightweight endpoints. Ideal for catalog reconciliation and enriching retail databases."
 ---
 
 Glade provides two lightweight conversion endpoints that let you translate between Amazon ASINs and GTINs (Global Trade Item Numbers such as UPCs and EANs). Use these when you need to reconcile your product catalog against Amazon listings, enrich retail data with Amazon identifiers, or cross-reference inventory systems that speak different identifier formats.
@@ -30,8 +30,15 @@ GET https://api.glade.dev/api/amazon/product/gtin-from-asin
 
 ### Response
 
-<ResponseField name="data.amazonProduct.gtin" type="string | null">
-  The GTIN (UPC, EAN, or ISBN) associated with this ASIN, or `null` if one is not available.
+<ResponseField name="data.amazonProduct" type="object">
+  <Expandable title="amazonProduct fields" defaultOpen>
+    <ResponseField name="asin" type="string">
+      The ASIN that was looked up, echoed back in the response.
+    </ResponseField>
+    <ResponseField name="gtin" type="string | null">
+      The GTIN (UPC, EAN, or ISBN) associated with this ASIN, or `null` if one is not available.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
 #### Example Response
@@ -40,6 +47,7 @@ GET https://api.glade.dev/api/amazon/product/gtin-from-asin
 {
   "data": {
     "amazonProduct": {
+      "asin": "B09XS7JWHH",
       "gtin": "027242921436"
     }
   }
@@ -52,6 +60,7 @@ GET https://api.glade.dev/api/amazon/product/gtin-from-asin
 {
   "data": {
     "amazonProduct": {
+      "asin": "B09XS7JWHH",
       "gtin": null
     }
   }
@@ -90,8 +99,15 @@ GET https://api.glade.dev/api/amazon/product/asin-from-gtin
 
 ### Response
 
-<ResponseField name="data.amazonProduct.asin" type="string | null">
-  The ASIN of the matching Amazon product, or `null` if no listing is found in the specified marketplace.
+<ResponseField name="data.amazonProduct" type="object">
+  <Expandable title="amazonProduct fields" defaultOpen>
+    <ResponseField name="asin" type="string | null">
+      The ASIN of the matching Amazon product, or `null` if no listing is found in the specified marketplace.
+    </ResponseField>
+    <ResponseField name="gtin" type="string">
+      The GTIN that was looked up, echoed back in the response.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
 #### Example Response
@@ -100,7 +116,8 @@ GET https://api.glade.dev/api/amazon/product/asin-from-gtin
 {
   "data": {
     "amazonProduct": {
-      "asin": "B09XS7JWHH"
+      "asin": "B09XS7JWHH",
+      "gtin": "027242921436"
     }
   }
 }
@@ -112,7 +129,8 @@ GET https://api.glade.dev/api/amazon/product/asin-from-gtin
 {
   "data": {
     "amazonProduct": {
-      "asin": null
+      "asin": null,
+      "gtin": "027242921436"
     }
   }
 }

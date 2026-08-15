@@ -61,13 +61,25 @@ A successful response returns `data.amazonProductCategory`.
             <ResponseField name="title" type="string">Product title.</ResponseField>
             <ResponseField name="url" type="string">Canonical Amazon product URL.</ResponseField>
             <ResponseField name="asin" type="string">Amazon Standard Identification Number.</ResponseField>
-            <ResponseField name="price" type="string">Displayed price, including currency symbol.</ResponseField>
+            <ResponseField name="price" type="object">
+              <Expandable title="price">
+                <ResponseField name="symbol" type="string">Currency symbol, e.g. `"$"`.</ResponseField>
+                <ResponseField name="value" type="number">Numeric price value, e.g. `279.99`.</ResponseField>
+                <ResponseField name="currency" type="string">ISO 4217 currency code, e.g. `"USD"`.</ResponseField>
+                <ResponseField name="display" type="string">Formatted display string, e.g. `"$279.99"`.</ResponseField>
+              </Expandable>
+            </ResponseField>
             <ResponseField name="mainImageUrl" type="string">URL of the primary product image.</ResponseField>
             <ResponseField name="rating" type="number">Average customer rating (1–5).</ResponseField>
             <ResponseField name="ratingsTotal" type="integer">Total number of customer ratings.</ResponseField>
             <ResponseField name="isPrime" type="boolean">Whether the product is eligible for Amazon Prime.</ResponseField>
             <ResponseField name="sponsored" type="boolean">Whether the listing is a sponsored placement.</ResponseField>
-            <ResponseField name="coupon" type="string">Active coupon text, e.g. `"Save 15%"`, or `null` if none.</ResponseField>
+            <ResponseField name="coupon" type="object | null">
+              Active coupon object, or `null` if no coupon is present.
+              <Expandable title="coupon">
+                <ResponseField name="label" type="string">Coupon label text, e.g. `"Save 15%"`.</ResponseField>
+              </Expandable>
+            </ResponseField>
           </Expandable>
         </ResponseField>
         <ResponseField name="pageInfo" type="object">
@@ -121,19 +133,29 @@ A successful response returns `data.amazonProductCategory`.
             "title": "Sony WH-1000XM5 Wireless Noise Canceling Headphones",
             "url": "https://www.amazon.com/dp/B09XS7JWHH",
             "asin": "B09XS7JWHH",
-            "price": "$279.99",
+            "price": {
+              "symbol": "$",
+              "value": 279.99,
+              "currency": "USD",
+              "display": "$279.99"
+            },
             "mainImageUrl": "https://m.media-amazon.com/images/I/61tMFIz7ykL.jpg",
             "rating": 4.7,
             "ratingsTotal": 34821,
             "isPrime": true,
             "sponsored": false,
-            "coupon": "Save 15%"
+            "coupon": { "label": "Save 15%" }
           },
           {
             "title": "Bose QuietComfort 45 Bluetooth Wireless Headphones",
             "url": "https://www.amazon.com/dp/B098FKXT8L",
             "asin": "B098FKXT8L",
-            "price": "$249.00",
+            "price": {
+              "symbol": "$",
+              "value": 249.00,
+              "currency": "USD",
+              "display": "$249.00"
+            },
             "mainImageUrl": "https://m.media-amazon.com/images/I/51fSMVNl9JL.jpg",
             "rating": 4.6,
             "ratingsTotal": 28043,
@@ -171,8 +193,9 @@ If a required parameter is missing or invalid, the API returns a non-2xx status 
 |---|---|
 | `400` | Bad request — a required parameter is missing or has an invalid value. |
 | `401` | Unauthorized — your API key is missing or invalid. |
-| `404` | Not found — no category was found for the given `categoryId` and `domain`. |
+| `402` | Payment required — your plan does not cover this endpoint or your quota is exhausted. |
 | `429` | Too many requests — you have exceeded your plan's rate limit. |
+| `502` | Bad gateway — Amazon returned an unexpected response; retry with exponential back-off. |
 
 ### Example error response
 
@@ -182,7 +205,7 @@ If a required parameter is missing or invalid, the API returns a non-2xx status 
   "errors": [
     {
       "code": 400,
-      "message": "Missing required parameter: sellerId"
+      "message": "Missing required parameter: categoryId"
     }
   ]
 }

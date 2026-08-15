@@ -93,7 +93,9 @@ If your request is malformed or your credentials are invalid, the API returns a 
 |---|---|
 | `400` | Bad request — the `domain` value is not a recognized marketplace code. |
 | `401` | Unauthorized — your API key is missing or invalid. |
+| `402` | Payment required — your plan does not cover this endpoint or your quota is exhausted. |
 | `429` | Too many requests — you have exceeded your plan's rate limit. |
+| `502` | Bad gateway — Amazon returned an unexpected response; retry with exponential back-off. |
 
 ### Example error response
 
@@ -103,7 +105,7 @@ If your request is malformed or your credentials are invalid, the API returns a 
   "errors": [
     {
       "code": 400,
-      "message": "Missing required parameter: sellerId"
+      "message": "Invalid parameter value: domain"
     }
   ]
 }

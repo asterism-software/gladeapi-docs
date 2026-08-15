@@ -94,7 +94,7 @@ A successful response returns a `data.amazonProductSearchResults` object contain
               Canonical Amazon product page URL.
             </ResponseField>
             <ResponseField name="asin" type="string">
-              Amazon Standard Identification Number uniquely identifying the product.
+              Amazon Standard Identification Number uniquely identifying the product. Matches the pattern `^[A-Z0-9]{10}$`.
             </ResponseField>
             <ResponseField name="price" type="object">
               <Expandable title="properties">
@@ -127,8 +127,13 @@ A successful response returns a `data.amazonProductSearchResults` object contain
             <ResponseField name="sponsored" type="boolean">
               `true` if this result is a sponsored/advertising placement.
             </ResponseField>
-            <ResponseField name="coupon" type="string | null">
-              Coupon label if a coupon is available (e.g., `"Save 10%"`), otherwise `null`.
+            <ResponseField name="coupon" type="object | null">
+              Coupon object if a coupon is available, otherwise `null`.
+              <Expandable title="properties">
+                <ResponseField name="label" type="string">
+                  Coupon label displayed on Amazon (e.g., `"Save 10%"`).
+                </ResponseField>
+              </Expandable>
             </ResponseField>
           </Expandable>
         </ResponseField>
@@ -214,7 +219,7 @@ A successful response returns a `data.amazonProductSearchResults` object contain
             "ratingsTotal": 64891,
             "isPrime": true,
             "sponsored": false,
-            "coupon": "Save 10%"
+            "coupon": { "label": "Save 10%" }
           },
           {
             "title": "Jabra Evolve2 55 Wireless PC Headset — Noise Cancelling",
@@ -255,11 +260,14 @@ If your request is malformed or unauthorized, the API returns a standard error e
 
 ```json
 {
-  "error": {
-    "code": "BAD_REQUEST",
-    "message": "Query parameter 'searchTerm' is required.",
-    "status": 400
-  }
+  "success": false,
+  "errors": [
+    {
+      "code": "BAD_REQUEST",
+      "message": "Query parameter 'searchTerm' is required.",
+      "path": "searchTerm"
+    }
+  ]
 }
 ```
 
@@ -267,5 +275,6 @@ If your request is malformed or unauthorized, the API returns a standard error e
 |--------|---------|
 | `400` | Missing or invalid query parameters |
 | `401` | Missing or invalid `API-KEY` / Bearer token |
+| `402` | Plan limit reached or payment required |
 | `429` | Rate limit exceeded |
-| `500` | Upstream Amazon error or internal server error |
+| `502` | Upstream Amazon error or bad gateway |

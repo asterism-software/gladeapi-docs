@@ -60,7 +60,7 @@ A successful response returns `data.amazonBestSellers` with ranked product resul
               Canonical Amazon product page URL.
             </ResponseField>
             <ResponseField name="asin" type="string">
-              Amazon Standard Identification Number for the product.
+              Amazon Standard Identification Number for the product. Matches the pattern `^[A-Z0-9]{10}$`.
             </ResponseField>
             <ResponseField name="price" type="object">
               <Expandable title="properties">
@@ -83,7 +83,7 @@ A successful response returns `data.amazonBestSellers` with ranked product resul
               `true` if the product is eligible for Amazon Prime shipping.
             </ResponseField>
             <ResponseField name="bestSellersRank" type="integer">
-              The product's numeric rank within this best-seller category (e.g., `1` is the top seller).
+              The product's numeric rank within this best-seller category (e.g., `1` is the top seller). Always greater than `0`.
             </ResponseField>
           </Expandable>
         </ResponseField>
@@ -122,6 +122,9 @@ A successful response returns `data.amazonBestSellers` with ranked product resul
             <ResponseField name="id" type="string">Parent category ID.</ResponseField>
             <ResponseField name="name" type="string">Parent category name.</ResponseField>
             <ResponseField name="url" type="string">Amazon URL for the parent category's best-seller page.</ResponseField>
+            <ResponseField name="breadcrumbPath" type="array">
+              Ordered array of ancestor category names forming a breadcrumb trail for the parent category.
+            </ResponseField>
           </Expandable>
         </ResponseField>
 
@@ -242,11 +245,13 @@ You must supply either a `categoryId` or a `url` parameter. Providing neither, o
 
 ```json
 {
-  "error": {
-    "code": "BAD_REQUEST",
-    "message": "Either 'categoryId' or 'url' is required.",
-    "status": 400
-  }
+  "success": false,
+  "errors": [
+    {
+      "code": "BAD_REQUEST",
+      "message": "Either 'categoryId' or 'url' is required."
+    }
+  ]
 }
 ```
 
@@ -254,5 +259,6 @@ You must supply either a `categoryId` or a `url` parameter. Providing neither, o
 |--------|---------|
 | `400` | Missing or invalid query parameters |
 | `401` | Missing or invalid `API-KEY` / Bearer token |
+| `402` | Plan limit reached or payment required |
 | `429` | Rate limit exceeded |
-| `500` | Upstream Amazon error or internal server error |
+| `502` | Upstream Amazon error or bad gateway |

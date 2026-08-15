@@ -95,11 +95,14 @@ This endpoint only accepts a `domain` query parameter. If you pass an unsupporte
 
 ```json
 {
-  "error": {
-    "code": "BAD_REQUEST",
-    "message": "Invalid domain value. Supported domains: US, UK, CA, DE, FR, IT, ES, AU, IN, MX, BR, JP, PL.",
-    "status": 400
-  }
+  "success": false,
+  "errors": [
+    {
+      "code": "BAD_REQUEST",
+      "message": "Invalid domain value. Supported domains: US, UK, CA, DE, FR, IT, ES, AU, IN, MX, BR, JP, PL.",
+      "path": "domain"
+    }
+  ]
 }
 ```
 
@@ -107,5 +110,6 @@ This endpoint only accepts a `domain` query parameter. If you pass an unsupporte
 |--------|---------|
 | `400` | Invalid or unsupported `domain` value |
 | `401` | Missing or invalid `API-KEY` / Bearer token |
+| `402` | Plan limit reached or payment required |
 | `429` | Rate limit exceeded |
-| `500` | Upstream Amazon error or internal server error |
+| `502` | Upstream Amazon error or bad gateway |
