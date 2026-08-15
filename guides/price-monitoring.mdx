@@ -4,15 +4,15 @@ sidebarTitle: "Price Monitoring"
 description: "Track Amazon product prices across multiple marketplaces using Glade API. Learn how to poll product data, detect price changes, and alert your users."
 ---
 
-Glade API makes it straightforward to track Amazon prices in real-time. This guide shows you how to fetch current prices, compare them over time, and build alerting logic — all with normalized price objects that work consistently across all 13 supported marketplaces.
+Glade API can provide periodic Amazon price snapshots for monitoring workflows. Product details have a six-hour cache target, so this interface is suitable for periodic tracking rather than real-time repricing. See [Data Freshness](/concepts/data-freshness).
 
 ## Fetching a product price
 
-The `GET /api/amazon/product` endpoint returns a `price` object for every product. The object contains four fields: `symbol`, `value`, `currency`, and `display`. The `value` field is always a numeric float, making it safe to use directly in comparisons without any string parsing.
+The `GET /api/amazon/product` endpoint can return a `price` object with `symbol`, `value`, `currency`, and `display` fields. Price data is optional because not every listing exposes a price.
 
 ```bash
-curl "https://api.glade.dev/api/amazon/product?asin=B0D1XD1ZV3&domain=US" \
-  -H "API-KEY: glade_live_lookup_your_key"
+curl "https://gladeapi.com/api/amazon/product?asin=B0D1XD1ZV3&domain=US" \
+  -H "API-KEY: YOUR_GLADE_API_KEY"
 ```
 
 The price data lives inside the `data.amazonProduct` object in the response:
@@ -53,7 +53,7 @@ async function getPrices(asin, domains) {
   const results = await Promise.all(
     domains.map(async (domain) => {
       const res = await fetch(
-        `https://api.glade.dev/api/amazon/product?asin=${asin}&domain=${domain}`,
+        `https://gladeapi.com/api/amazon/product?asin=${asin}&domain=${domain}`,
         { headers: { 'API-KEY': GLADE_KEY } }
       );
       const { data } = await res.json();
@@ -80,7 +80,7 @@ GLADE_KEY = os.environ['GLADE_API_KEY']
 
 def get_price(asin: str, domain: str = 'US') -> float | None:
     resp = requests.get(
-        'https://api.glade.dev/api/amazon/product',
+        'https://gladeapi.com/api/amazon/product',
         params={'asin': asin, 'domain': domain},
         headers={'API-KEY': GLADE_KEY},
     )
@@ -120,8 +120,8 @@ A recommended polling pattern:
 The buy-box price is not always the cheapest option. Third-party sellers often list the same ASIN at a lower price, sometimes with free shipping. Use `GET /api/amazon/product/offers` to retrieve all active seller listings for an ASIN.
 
 ```bash
-curl "https://api.glade.dev/api/amazon/product/offers?asin=B0D1XD1ZV3&domain=US" \
-  -H "API-KEY: glade_live_lookup_your_key"
+curl "https://gladeapi.com/api/amazon/product/offers?asin=B0D1XD1ZV3&domain=US" \
+  -H "API-KEY: YOUR_GLADE_API_KEY"
 ```
 
 Each offer in the response includes:
@@ -144,10 +144,10 @@ Amazon regularly applies clip-and-save coupons and time-limited deals to product
 **Deals:** Use `GET /api/amazon/deals` to browse currently active deals across categories. The endpoint returns lightning deals, best deals, and other promotional pricing — useful for building a deal-alert feature or scanning a category for temporarily discounted products.
 
 ```bash
-curl "https://api.glade.dev/api/amazon/deals?domain=US&categoryId=172282" \
-  -H "API-KEY: glade_live_lookup_your_key"
+curl "https://gladeapi.com/api/amazon/deals?domain=US&categoryIds=172282" \
+  -H "API-KEY: YOUR_GLADE_API_KEY"
 ```
 
 <Tip>
-  When calculating the effective price for a user, combine `price.value` with any active coupon savings. A product priced at $29.99 with a "Save $5.00" coupon has an effective cost of $24.99 — which may be lower than a competing offer that lacks a coupon.
+  Coupon labels are display text, not a normalized numeric discount. Show the label to users, but do not subtract it from `price.value` unless your application has parsed and validated the specific label format.
 </Tip>

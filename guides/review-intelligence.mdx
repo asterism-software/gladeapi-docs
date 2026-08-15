@@ -11,8 +11,8 @@ Amazon product reviews are a rich source of customer feedback, competitive intel
 `GET /api/amazon/product/reviews` returns structured review data for any ASIN. Pass the ASIN and domain to get started:
 
 ```bash
-curl "https://api.glade.dev/api/amazon/product/reviews?asin=B0D1XD1ZV3&domain=US&page=1" \
-  -H "API-KEY: glade_live_lookup_your_key"
+curl "https://gladeapi.com/api/amazon/product/reviews?asin=B0D1XD1ZV3&domain=US&page=1" \
+  -H "API-KEY: YOUR_GLADE_API_KEY"
 ```
 
 **Supported query parameters:**
@@ -28,7 +28,7 @@ curl "https://api.glade.dev/api/amazon/product/reviews?asin=B0D1XD1ZV3&domain=US
 
 The response contains two review lists under `data.amazonProduct`:
 
-- **`topReviews`** — Amazon's featured/highlighted reviews for the product. These are always returned regardless of pagination.
+- **`topReviews`** — Featured reviews when the data source provides them.
 - **`reviewsPaginated.reviews[]`** — the full paginated review set, subject to your filters.
 
 Each review object includes the following fields:
@@ -64,13 +64,13 @@ Glade API's filtering parameters let you narrow the review set before it reaches
 
 **Filter to verified purchases only** by adding `onlyVerifiedReviews=true`. Verified reviews carry more signal because Amazon has confirmed the reviewer actually bought the product.
 
-**Search within review text** using the `search` parameter. Amazon indexes the full text of reviews, so you can use natural keywords to find mentions of specific features, problems, or topics.
+**Search review text** using the `search` parameter to find mentions of specific features, problems, or topics.
 
 The following example fetches 1-star verified reviews that mention the word "defective" — useful for monitoring quality issues on your own products or a competitor's:
 
 ```bash
-curl "https://api.glade.dev/api/amazon/product/reviews?asin=B0D1XD1ZV3&domain=US&rating=ONE_STAR&onlyVerifiedReviews=true&search=defective" \
-  -H "API-KEY: glade_live_lookup_your_key"
+curl "https://gladeapi.com/api/amazon/product/reviews?asin=B0D1XD1ZV3&domain=US&rating=ONE_STAR&onlyVerifiedReviews=true&search=defective" \
+  -H "API-KEY: YOUR_GLADE_API_KEY"
 ```
 
 You can combine all three filters simultaneously. The filters are applied server-side before the response is returned, so you receive only the reviews that match all conditions.
@@ -99,7 +99,7 @@ def get_all_reviews(asin: str, domain: str = 'US') -> list:
     page = 1
     while True:
         resp = requests.get(
-            'https://api.glade.dev/api/amazon/product/reviews',
+            'https://gladeapi.com/api/amazon/product/reviews',
             params={'asin': asin, 'domain': domain, 'page': page},
             headers={'API-KEY': GLADE_KEY},
         )
@@ -117,7 +117,7 @@ def get_all_reviews(asin: str, domain: str = 'US') -> list:
   Fetching every review page for a product with thousands of reviews consumes one unit per page. Set a page limit or use the `search` filter to narrow results first.
 </Warning>
 
-For most analytical use cases, you don't need every review — you need a representative sample. Consider capping collection at 10–20 pages (typically 400–800 reviews), or use the `search` filter to focus on the specific topics you care about.
+For most analytical use cases, consider capping collection at a fixed number of pages or using the `search` filter to focus on the topics you care about.
 
 ## Use cases
 

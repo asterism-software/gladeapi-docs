@@ -38,12 +38,12 @@ The following example fetches the same ASIN from two marketplaces:
 
 ```bash
 # US marketplace
-curl "https://api.glade.dev/api/amazon/product?asin=B0D1XD1ZV3&domain=US" \
-  -H "API-KEY: glade_live_lookup_your_key"
+curl "https://gladeapi.com/api/amazon/product?asin=B0D1XD1ZV3&domain=US" \
+  -H "API-KEY: YOUR_GLADE_API_KEY"
 
 # UK marketplace
-curl "https://api.glade.dev/api/amazon/product?asin=B0D1XD1ZV3&domain=UK" \
-  -H "API-KEY: glade_live_lookup_your_key"
+curl "https://gladeapi.com/api/amazon/product?asin=B0D1XD1ZV3&domain=UK" \
+  -H "API-KEY: YOUR_GLADE_API_KEY"
 ```
 
 Each response is fully independent — the UK response returns prices in GBP, UK Prime status, and fulfillment information from amazon.co.uk.

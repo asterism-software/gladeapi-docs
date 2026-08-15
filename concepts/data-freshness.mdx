@@ -1,0 +1,35 @@
+---
+title: "Data Freshness and Caching"
+sidebarTitle: "Data Freshness"
+description: "Understand Glade API cache targets and response headers that identify cache status and source-data freshness."
+---
+
+Glade API caches normalized operation results. A request can therefore return cached data instead of making a new provider request. Cache hits and provider-backed results have the same response schema and each successful operation costs one unit.
+
+## Cache targets
+
+| Operation | Cache target |
+|---|---:|
+| Product details, sales estimates, seller profiles | 6 hours |
+| ASIN/GTIN conversion | 30 days |
+| Product variants | 12 hours |
+| Stock estimates, product search, best sellers | 15 minutes |
+| Product offers and deals | 5 minutes |
+| Product reviews and autocomplete | 1 hour |
+| Category products | 30 minutes |
+| Category taxonomies and author profiles | 24 hours |
+
+These are cache targets, not freshness guarantees. When a provider is temporarily unavailable, Glade API may serve a previously cached result rather than fail the request.
+
+## Response headers
+
+Use these headers to inspect the result:
+
+| Header | Meaning |
+|---|---|
+| `X-Glade-Cache` | `hit`, `miss`, or `stale` |
+| `X-Glade-Data-Fetched-At` | ISO 8601 time when the underlying Amazon data was fetched |
+| `X-Glade-Schema-Version` | Version of the normalized response contract |
+| `X-Glade-Usage-Units` | Units charged for this HTTP exchange |
+
+For monitoring workflows, compare `X-Glade-Data-Fetched-At` rather than assuming that every request represents a new provider fetch.

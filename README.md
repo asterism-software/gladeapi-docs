@@ -33,6 +33,15 @@ mint dev
 
 The preview is available at `http://localhost:3000` by default.
 
+Validate every API page and example against the public OpenAPI contract:
+
+```bash
+npm run check
+```
+
+Pass a local OpenAPI JSON file as the first argument when checking an
+unreleased contract change.
+
 ## Editing guidelines
 
 - Follow the project instructions in `AGENTS.md`.

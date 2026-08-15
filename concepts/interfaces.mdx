@@ -1,98 +1,63 @@
 ---
-title: "REST, GraphQL, and MCP Interfaces: Glade API Guide"
+title: "REST, GraphQL, and MCP Interfaces"
 sidebarTitle: "Interfaces"
-description: "Glade API exposes all 17 Amazon data operations through REST, GraphQL, and MCP. Learn how each interface works and when to use each one."
+description: "Use Glade API through REST, GraphQL, or MCP, with the same 17 Amazon operations and unit accounting on plans that include each interface."
 ---
 
-Glade API exposes all its Amazon data operations through three interfaces — REST, GraphQL, and MCP. Every interface shares the same quota, caching semantics, and normalized response contract, so you can mix and match based on your use case.
+Glade API exposes the same 17 Amazon operations through REST, GraphQL, and MCP. The underlying validation, caching, output contracts, and unit accounting are shared.
+
+<Note>
+  The Hobby plan includes REST only. Pay as you go, Premium 20K, and Enterprise plans include REST, GraphQL, and MCP.
+</Note>
 
 <Tabs>
   <Tab title="REST">
     ## REST
 
-    The REST interface is the simplest way to integrate with Glade API. All endpoints live under `/api/amazon/*` and use HTTP GET requests.
-
-    **Base URL:** `https://api.glade.dev`
-
-    Authenticate every request by passing your API key in the `API-KEY` header. All endpoints accept query parameters for ASIN, domain, and any operation-specific options.
-
-    ### Example: Fetch a product
+    REST uses `GET` endpoints under `https://gladeapi.com/api/amazon/`. Pass parameters in the query string and authenticate with `API-KEY` or a Bearer token.
 
     ```bash
-    curl "https://api.glade.dev/api/amazon/product?asin=B0D1XD1ZV3&domain=US" \
-      -H "API-KEY: glade_live_lookup_your_key"
+    curl "https://gladeapi.com/api/amazon/product?asin=B0D1XD1ZV3&domain=US" \
+      -H "API-KEY: YOUR_GLADE_API_KEY"
     ```
 
-    ### Best for
-
-    - Server-side applications and backend services
-    - Simple integrations that need minimal setup
-    - Migrating from Canopy or other REST-based Amazon data APIs
+    REST is available on every plan and is the simplest interface for scripts and backend services.
   </Tab>
 
   <Tab title="GraphQL">
     ## GraphQL
 
-    The GraphQL interface lets you fetch exactly the fields you need in a single request. Send a `POST` request to the GraphQL endpoint with a JSON body containing your `query` and optional `variables`.
-
-    **Endpoint:** `POST https://api.glade.dev/api/graphql`
-
-    The GraphQL interface shares the same validation rules, marketplace semantics, quota accounting, and cache layer as the REST interface — switching between them has no effect on your unit balance or response freshness. Introspection is available, and query complexity is bounded by gateway policy.
-
-    ### Example: Fetch a product with selected fields
+    GraphQL accepts authenticated `POST` requests at `https://gladeapi.com/api/graphql`. Every query must contain exactly one root field, so it selects fields from one Glade operation rather than joining multiple operations.
 
     ```bash
-    curl -X POST "https://api.glade.dev/api/graphql" \
-      -H "API-KEY: glade_live_lookup_your_key" \
+    curl -X POST "https://gladeapi.com/api/graphql" \
+      -H "API-KEY: YOUR_GLADE_API_KEY" \
       -H "Content-Type: application/json" \
-      -d '{"query": "{ amazonProduct(asin: \"B0D1XD1ZV3\", domain: US) { title price { value currency } isPrime } }"}'
+      -d '{"query":"query { amazonProduct(input: { asin: \"B0D1XD1ZV3\", domain: US }) { title price { value currency } isPrime } }"}'
     ```
 
-    ### Best for
-
-    - Fetching only specific fields to reduce payload size
-    - Frontend applications with dynamic data requirements
-    - Complex queries that join product, offer, and review data in one round trip
+    Authenticated schema introspection is supported through the same `POST` endpoint. There is no browser-based GraphQL playground at that URL.
   </Tab>
 
   <Tab title="MCP">
     ## MCP
 
-    The MCP (Model Context Protocol) interface exposes all 17 Glade API operations as typed tools over a JSON-RPC endpoint. It is designed for AI agents and LLM tool-use workflows.
+    MCP exposes all 17 operations as read-only tools at `https://gladeapi.com/api/mcp`. The endpoint uses Streamable HTTP, implements the `2026-07-28` protocol revision, and includes stateless compatibility for 2025-era clients.
 
-    **Endpoint:** `POST https://api.glade.dev/api/mcp`
+    MCP accepts `API-KEY`, `GLADE-API-KEY`, `X-API-KEY`, or `Authorization: Bearer` authentication. Use an MCP client that supports remote Streamable HTTP servers and custom request headers.
 
-    The MCP endpoint accepts API keys in any of the following headers:
+    Every tool result includes structured content and a JSON text representation. Tool annotations identify the operations as read-only and instruct clients to treat marketplace content as untrusted data.
 
-    | Header | Example value |
-    |---|---|
-    | `API-KEY` | `glade_live_lookup_your_key` |
-    | `GLADE-API-KEY` | `glade_live_lookup_your_key` |
-    | `X-API-KEY` | `glade_live_lookup_your_key` |
-    | `Authorization` | `Bearer glade_live_lookup_your_key` |
-
-    **Security:** Marketplace content returned by any tool is treated as untrusted data and is never interpreted as tool instructions. This protects your agent against prompt injection attacks embedded in Amazon product listings, reviews, or seller descriptions.
-
-    <Note>
-      The MCP endpoint is compatible with any MCP client. Connect it to Claude, GPT, or your custom AI agent to give it full Amazon data access.
-    </Note>
-
-    ### Best for
-
-    - AI agents that need to query Amazon data autonomously
-    - LLM tool-use pipelines (Claude, GPT, and compatible runtimes)
-    - Autonomous workflows that span product lookup, search, and price comparison
+    See [Connect AI agents](/guides/ai-agents) for setup and the exact tool names.
   </Tab>
 </Tabs>
 
----
-
 ## Which interface should I use?
 
-| Interface | Best for | Authentication headers | Endpoint |
-|---|---|---|---|
-| **REST** | Server-side apps, simple integrations, Canopy migrations | `API-KEY` | `GET https://api.glade.dev/api/amazon/*` |
-| **GraphQL** | Fetching specific fields, frontend apps, complex queries | `API-KEY` | `POST https://api.glade.dev/api/graphql` |
-| **MCP** | AI agents, LLM tool-use, autonomous workflows | `API-KEY`, `GLADE-API-KEY`, `X-API-KEY`, Bearer | `POST https://api.glade.dev/api/mcp` |
+| Interface | Best for | Request |
+|---|---|---|
+| **REST** | Simple integrations and backend services | `GET https://gladeapi.com/api/amazon/*` |
+| **GraphQL** | Selecting a subset of fields from one operation | `POST https://gladeapi.com/api/graphql` |
+| **MCP** | AI agents and tool-use workflows | `POST https://gladeapi.com/api/mcp` |
 
-All three interfaces count against the same unit quota and respect the same per-plan rate limits. You can use them interchangeably within the same application.
+Each successful operation costs one unit. Switching interfaces does not bypass plan entitlements, quotas, rate limits, or caching.

@@ -8,11 +8,11 @@ Glade API gives you the data layer for Amazon product research. Whether you're v
 
 ## Searching for products
 
-`GET /api/amazon/search` runs a keyword search against Amazon's product index and returns ranked results exactly as a shopper would see them. Pass a `searchTerm` to get started, then layer in filters to narrow results.
+`GET /api/amazon/search` returns ranked product results for a search phrase. Pass `searchTerm`, then add optional filters to narrow the result.
 
 ```bash
-curl "https://api.glade.dev/api/amazon/search?searchTerm=wireless+earbuds&domain=US&sort=featured&page=1" \
-  -H "API-KEY: glade_live_lookup_your_key"
+curl "https://gladeapi.com/api/amazon/search?searchTerm=wireless+earbuds&domain=US&sort=featured&page=1" \
+  -H "API-KEY: YOUR_GLADE_API_KEY"
 ```
 
 **Supported query parameters:**
@@ -22,13 +22,14 @@ curl "https://api.glade.dev/api/amazon/search?searchTerm=wireless+earbuds&domain
 | `searchTerm` | The keyword or phrase to search for |
 | `domain` | Marketplace (e.g. `US`, `UK`, `DE`) |
 | `categoryId` | Restrict results to a specific category node |
-| `sort` | Sort order: `featured`, `price_asc`, `price_desc`, `review_rank`, `newest` |
-| `conditions` | Filter by condition: `new`, `used`, `refurbished`, `collectible` |
+| `sort` | `FEATURED`, `MOST_RECENT`, `PRICE_ASCENDING`, `PRICE_DESCENDING`, or `AVERAGE_CUSTOMER_REVIEW` (case-insensitive) |
+| `conditions` | Comma-separated `NEW`, `USED`, and/or `RENEWED` values |
 | `minPrice` | Minimum price in the marketplace's local currency |
 | `maxPrice` | Maximum price in the marketplace's local currency |
 | `page` | Page number for pagination |
+| `limit` | Requested result limit, from 1 through 100 |
 
-The response includes two top-level keys under `data.amazonSearch`:
+The response includes these fields under `data.amazonProductSearchResults`:
 
 - **`productResults.results[]`** — the ranked product list. Each item contains `title`, `asin`, `price`, `rating`, `ratingsTotal`, `isPrime`, `sponsored`, and `coupon`.
 - **`productResults.pageInfo`** — pagination metadata: `currentPage`, `totalPages`, and `hasNextPage`.
@@ -73,7 +74,7 @@ interface GladeProduct {
 
 async function getProduct(asin: string, domain = 'US'): Promise<GladeProduct> {
   const res = await fetch(
-    `https://api.glade.dev/api/amazon/product?asin=${asin}&domain=${domain}`,
+    `https://gladeapi.com/api/amazon/product?asin=${asin}&domain=${domain}`,
     { headers: { 'API-KEY': process.env.GLADE_API_KEY! } }
   );
   const body = await res.json();
@@ -81,7 +82,7 @@ async function getProduct(asin: string, domain = 'US'): Promise<GladeProduct> {
 }
 ```
 
-If you only need a subset of fields, use the GraphQL interface instead of REST. GraphQL lets you request exactly the fields you want, which keeps response payloads small when you're processing large batches of ASINs.
+On a plan that includes GraphQL, you can request a subset of fields from one operation to reduce response payload size.
 
 ## Analyzing best sellers
 
@@ -90,8 +91,8 @@ Best-seller rankings tell you which products have the highest sustained sales ve
 **List best sellers in a category:**
 
 ```bash
-curl "https://api.glade.dev/api/amazon/bestsellers?domain=US&categoryId=2625373011" \
-  -H "API-KEY: glade_live_lookup_your_key"
+curl "https://gladeapi.com/api/amazon/bestsellers?domain=US&categoryId=2625373011" \
+  -H "API-KEY: YOUR_GLADE_API_KEY"
 ```
 
 Each product in the response includes a `bestSellersRank` value. Lower ranks (closer to #1) indicate higher sales volume. Track rank movement over time to spot rising products before they become dominant.
@@ -99,8 +100,8 @@ Each product in the response includes a `bestSellersRank` value. Lower ranks (cl
 **Browse all available best-seller categories:**
 
 ```bash
-curl "https://api.glade.dev/api/amazon/bestseller-categories?domain=US" \
-  -H "API-KEY: glade_live_lookup_your_key"
+curl "https://gladeapi.com/api/amazon/bestseller-categories?domain=US" \
+  -H "API-KEY: YOUR_GLADE_API_KEY"
 ```
 
 Use `GET /api/amazon/bestseller-categories` to discover valid `categoryId` values for the marketplace you're researching. Categories are hierarchical — you can drill down from broad departments to specific niches.
@@ -111,12 +112,12 @@ ASINs are Amazon-specific identifiers, but the wider retail world uses GTINs (Gl
 
 ```bash
 # ASIN → GTIN
-curl "https://api.glade.dev/api/amazon/product/gtin-from-asin?asin=B0D1XD1ZV3&domain=US" \
-  -H "API-KEY: glade_live_lookup_your_key"
+curl "https://gladeapi.com/api/amazon/product/gtin-from-asin?asin=B0D1XD1ZV3&domain=US" \
+  -H "API-KEY: YOUR_GLADE_API_KEY"
 
 # GTIN → ASIN
-curl "https://api.glade.dev/api/amazon/product/asin-from-gtin?gtin=0194252099360&domain=US" \
-  -H "API-KEY: glade_live_lookup_your_key"
+curl "https://gladeapi.com/api/amazon/product/asin-from-gtin?gtin=0194252099360&domain=US" \
+  -H "API-KEY: YOUR_GLADE_API_KEY"
 ```
 
 Common use cases for ASIN/GTIN conversion:
@@ -136,8 +137,8 @@ Before entering a category or launching a competing product, you need to know wh
 | `annualUnitSales` | Estimated units sold in the past 12 months |
 
 ```bash
-curl "https://api.glade.dev/api/amazon/product/sales?asin=B0D1XD1ZV3&domain=US" \
-  -H "API-KEY: glade_live_lookup_your_key"
+curl "https://gladeapi.com/api/amazon/product/sales?asin=B0D1XD1ZV3&domain=US" \
+  -H "API-KEY: YOUR_GLADE_API_KEY"
 ```
 
 Use `monthlyUnitSales` as your primary demand signal — it smooths out short-term spikes while still reflecting current conditions. Use `weeklyUnitSales` to detect seasonal surges or product launches in progress.

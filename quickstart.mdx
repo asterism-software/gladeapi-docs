@@ -4,7 +4,7 @@ sidebarTitle: "Quickstart"
 description: "Learn how to create an API key, authenticate, and make your first Glade API call to fetch Amazon product data in under five minutes."
 ---
 
-Glade API lets you fetch live Amazon data with a single HTTP request. This guide walks you through creating an account, generating your API key, and making your first call — you will have real product data in your terminal in under five minutes.
+Glade API lets you fetch normalized Amazon data with a single HTTP request. This guide walks you through creating an account, generating your API key, and making your first call.
 
 <Steps>
   <Step title="Create your account">
@@ -15,18 +15,18 @@ Glade API lets you fetch live Amazon data with a single HTTP request. This guide
     Your key will look like this:
 
     ```text
-    glade_live_lookup_xxxxxxxxxxxxxxxxxxxx
+    glade_live_<lookup-prefix>_<secret>
     ```
   </Step>
   <Step title="Make your first request">
-    Replace `glade_live_lookup_your_key` with your actual API key and run the following command in your terminal:
+    Replace `YOUR_GLADE_API_KEY` with your actual API key and run the following command in your terminal:
 
     ```bash
-    curl "https://api.glade.dev/api/amazon/product?asin=B0D1XD1ZV3&domain=US" \
-      -H "API-KEY: glade_live_lookup_your_key"
+    curl "https://gladeapi.com/api/amazon/product?asin=B0D1XD1ZV3&domain=US" \
+      -H "API-KEY: YOUR_GLADE_API_KEY"
     ```
 
-    This fetches live product data for the ASIN `B0D1XD1ZV3` from the US marketplace. The `domain` parameter controls which of the 13 supported Amazon marketplaces Glade API queries.
+    This fetches product data for the ASIN `B0D1XD1ZV3` from the US marketplace. Responses may come from Glade's cache; freshness headers identify when the underlying data was fetched.
   </Step>
   <Step title="Read the response">
     A successful response returns a JSON object with a `data` key containing the normalized product record:
@@ -52,14 +52,14 @@ Glade API lets you fetch live Amazon data with a single HTTP request. This guide
     }
     ```
 
-    Every price object includes a raw numeric `value`, an ISO 4217 `currency` code, and a locale-formatted `display` string. The `isInStock` and `isPrime` flags reflect live availability at the time of the request.
+    Price fields and availability flags are optional because Amazon may not expose them for every listing. When present, `value` is numeric and `currency` is an ISO 4217 code.
   </Step>
   <Step title="Try another marketplace">
     Change the `domain` parameter to target a different Amazon marketplace. For example, to fetch the same ASIN's UK listing with GBP pricing:
 
     ```bash
-    curl "https://api.glade.dev/api/amazon/product?asin=B0D1XD1ZV3&domain=UK" \
-      -H "API-KEY: glade_live_lookup_your_key"
+    curl "https://gladeapi.com/api/amazon/product?asin=B0D1XD1ZV3&domain=UK" \
+      -H "API-KEY: YOUR_GLADE_API_KEY"
     ```
 
     You can substitute any of the 13 supported domain codes — `US`, `UK`, `CA`, `DE`, `FR`, `IT`, `ES`, `AU`, `IN`, `MX`, `BR`, `JP`, or `PL` — without changing anything else in your request. Glade API resolves the correct Amazon host, currency, and locale for each market automatically.
@@ -79,6 +79,6 @@ Glade API lets you fetch live Amazon data with a single HTTP request. This guide
     See every parameter, field, and response schema for the product endpoint.
   </Card>
   <Card title="Guide: Price Monitoring" icon="chart-line" href="/guides/price-monitoring">
-    Build a multi-marketplace price monitor using Glade API, polling, and webhook notifications.
+    Build a multi-marketplace price monitor with polling and your own alert delivery.
   </Card>
 </CardGroup>

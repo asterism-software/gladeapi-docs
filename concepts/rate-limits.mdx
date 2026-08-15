@@ -17,19 +17,19 @@ Glade API enforces per-plan rate limits to ensure fair access for all users. If 
 | **Premium 20K** | 600 | 50 |
 | **Enterprise** | 1,200 | 100 |
 
-Rate limits are enforced at the API key level. Concurrent request caps count the number of in-flight requests at any given moment — requests that have been sent but whose responses have not yet been received.
+The listed limits are enforced per API key. An organization-wide guard also applies at twice the per-key request and concurrency limits. Concurrent caps count requests that have been sent but have not completed.
 
 ---
 
 ## Rate limit errors
 
-When you exceed either your requests-per-minute limit or your concurrency cap, Glade API returns an HTTP `429` with a JSON error body:
+When you exceed a requests-per-minute limit, Glade API returns an HTTP `429` with the `7429` error shown below. A concurrency-limit response uses code `7430` and the message `Concurrent request limit exceeded`.
 
 ```json
 {
   "success": false,
   "errors": [
-    { "code": 429, "message": "Rate limit exceeded. Please retry after 1 second." }
+    { "code": 7429, "message": "Rate limit exceeded" }
   ]
 }
 ```

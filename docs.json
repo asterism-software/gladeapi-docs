@@ -22,6 +22,18 @@
       "dark": "#102D1C"
     }
   },
+  "api": {
+    "openapi": "https://gladeapi.com/api/v1/openapi.json",
+    "playground": {
+      "display": "interactive"
+    },
+    "examples": {
+      "languages": ["curl", "python", "javascript"],
+      "defaults": "required",
+      "prefill": true,
+      "autogenerate": true
+    }
+  },
   "navigation": {
     "tabs": [
       {
@@ -40,6 +52,7 @@
             "pages": [
               "concepts/interfaces",
               "concepts/marketplaces",
+              "concepts/data-freshness",
               "concepts/units-and-billing",
               "concepts/rate-limits"
             ]
@@ -67,7 +80,8 @@
               "api-reference/product-reviews",
               "api-reference/stock-estimates",
               "api-reference/sales-estimates",
-              "api-reference/gtin-asin-lookup"
+              "api-reference/gtin-from-asin",
+              "api-reference/asin-from-gtin"
             ]
           },
           {

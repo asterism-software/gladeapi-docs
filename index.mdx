@@ -4,7 +4,7 @@ sidebarTitle: "Home"
 description: "Glade API gives you clean, normalized Amazon data through REST, GraphQL, and MCP — covering products, search, offers, reviews, sellers, deals, and estimates across 13 marketplaces."
 ---
 
-Glade API is a Canopy-compatible Amazon data platform that exposes product details, search results, seller profiles, customer reviews, third-party offers, deals, and sales/stock estimates through a single consistent contract. Whether you prefer REST, GraphQL, or the Model Context Protocol for AI agents, every operation shares the same quota, caching semantics, and response shape.
+Glade API exposes product details, search results, seller profiles, customer reviews, third-party offers, deals, and sales or stock estimates through one normalized contract. REST, GraphQL, and MCP share the same validation, caching, output schemas, and unit accounting on plans that include each interface.
 
 <CardGroup cols={2}>
   <Card title="Quickstart" icon="bolt" href="/quickstart">
@@ -23,7 +23,7 @@ Glade API is a Canopy-compatible Amazon data platform that exposes product detai
 
 ## How Glade API Works
 
-Every endpoint accepts a marketplace `domain` parameter and one or more product identifiers (ASIN, GTIN, or URL). Responses are normalized objects — no scraping logic, no raw HTML, no per-marketplace parsing required in your code.
+Every endpoint accepts a marketplace `domain` parameter. Each operation defines its own required inputs, such as an ASIN, GTIN, Amazon URL, search phrase, seller ID, or category ID. Responses are normalized JSON objects rather than raw HTML.
 
 <Steps>
   <Step title="Create an API key">
@@ -33,7 +33,7 @@ Every endpoint accepts a marketplace `domain` parameter and one or more product 
     Pass your key in the `API-KEY` header (or as a Bearer token) on every call.
   </Step>
   <Step title="Choose your interface">
-    Use REST (`/api/amazon/*`), GraphQL (`/api/graphql`), or MCP (`/api/mcp`) — all interfaces share the same operations and quota.
+    Use REST (`/api/amazon/*`) on every plan. Paid plans also include GraphQL (`/api/graphql`) and MCP (`/api/mcp`).
   </Step>
   <Step title="Pick a marketplace">
     Add `?domain=US` (or UK, CA, DE, FR, IT, ES, AU, IN, MX, BR, JP, PL) to target any of the 13 supported Amazon marketplaces.
