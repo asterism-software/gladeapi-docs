@@ -1,0 +1,258 @@
+---
+title: "GET /api/amazon/bestsellers — Best Sellers by Category"
+sidebarTitle: "Best Sellers"
+description: "Retrieve Amazon best-seller rankings for a specific category. Returns ranked products with bestSellersRank, price, rating, and category hierarchy."
+---
+
+The bestsellers endpoint returns the current Amazon best-seller list for a given category, along with each product's rank, price, rating, and Prime eligibility. The response also includes full category hierarchy — parent category, current category breadcrumb, and child categories — so you can build navigable category trees in your application.
+
+<Tip>
+  Use the [bestseller-categories](/api-reference/bestseller-categories) endpoint to discover valid `categoryId` values for the marketplace you're querying.
+</Tip>
+
+## Request
+
+<ParamField query="domain" type="string" default="US">
+  The Amazon marketplace to query. Supported values: `US`, `UK`, `CA`, `DE`, `FR`, `IT`, `ES`, `AU`, `IN`, `MX`, `BR`, `JP`, `PL`. Defaults to `US`.
+</ParamField>
+
+<ParamField query="categoryId" type="string">
+  The Amazon best-seller category ID to retrieve rankings for. You can obtain valid IDs from the [bestseller-categories](/api-reference/bestseller-categories) endpoint. Either `categoryId` or `url` must be provided.
+</ParamField>
+
+<ParamField query="url" type="string">
+  A direct Amazon best-sellers page URL (e.g., `https://www.amazon.com/Best-Sellers-Electronics/zgbs/electronics/`). Use this as an alternative to `categoryId` when you have a URL on hand.
+</ParamField>
+
+<ParamField query="page" type="integer">
+  Page number to retrieve. Minimum value: `1`.
+</ParamField>
+
+<ParamField query="limit" type="integer">
+  Number of products to return per page. Minimum value: `1`.
+</ParamField>
+
+### Example request
+
+```bash
+curl "https://api.glade.dev/api/amazon/bestsellers?domain=US&categoryId=172282" \
+  -H "API-KEY: YOUR_API_KEY"
+```
+
+---
+
+## Response
+
+A successful response returns `data.amazonBestSellers` with ranked product results and full category context.
+
+<ResponseField name="data.amazonBestSellers" type="object">
+  <Expandable title="properties" defaultOpen>
+    <ResponseField name="productResults" type="object">
+      <Expandable title="properties">
+        <ResponseField name="results" type="array">
+          Ranked array of best-seller product objects, ordered by `bestSellersRank` ascending.
+
+          <Expandable title="results[]">
+            <ResponseField name="title" type="string">
+              Full product title as shown on Amazon.
+            </ResponseField>
+            <ResponseField name="url" type="string">
+              Canonical Amazon product page URL.
+            </ResponseField>
+            <ResponseField name="asin" type="string">
+              Amazon Standard Identification Number for the product.
+            </ResponseField>
+            <ResponseField name="price" type="object">
+              <Expandable title="properties">
+                <ResponseField name="symbol" type="string">Currency symbol (e.g., `"$"`).</ResponseField>
+                <ResponseField name="value" type="number">Numeric price value.</ResponseField>
+                <ResponseField name="currency" type="string">ISO 4217 currency code (e.g., `"USD"`).</ResponseField>
+                <ResponseField name="display" type="string">Human-readable price string (e.g., `"$29.99"`).</ResponseField>
+              </Expandable>
+            </ResponseField>
+            <ResponseField name="mainImageUrl" type="string">
+              URL of the product's primary image.
+            </ResponseField>
+            <ResponseField name="rating" type="number">
+              Average customer rating out of 5.
+            </ResponseField>
+            <ResponseField name="ratingsTotal" type="integer">
+              Total number of customer ratings.
+            </ResponseField>
+            <ResponseField name="isPrime" type="boolean">
+              `true` if the product is eligible for Amazon Prime shipping.
+            </ResponseField>
+            <ResponseField name="bestSellersRank" type="integer">
+              The product's numeric rank within this best-seller category (e.g., `1` is the top seller).
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+
+        <ResponseField name="pageInfo" type="object">
+          <Expandable title="properties">
+            <ResponseField name="currentPage" type="integer">The current page number returned.</ResponseField>
+            <ResponseField name="totalPages" type="integer">Total number of pages available for this category.</ResponseField>
+            <ResponseField name="totalResults" type="integer">Total number of best-seller products in this category.</ResponseField>
+            <ResponseField name="hasNextPage" type="boolean">`true` if there is a subsequent page of results.</ResponseField>
+            <ResponseField name="hasPrevPage" type="boolean">`true` if there is a previous page of results.</ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="categoryInfo" type="object">
+      Hierarchical category context for the requested best-seller list.
+
+      <Expandable title="properties">
+        <ResponseField name="currentCategory" type="object">
+          The category you requested.
+          <Expandable title="properties">
+            <ResponseField name="id" type="string">Category ID.</ResponseField>
+            <ResponseField name="name" type="string">Display name of the category.</ResponseField>
+            <ResponseField name="url" type="string">Amazon URL for this category's best-seller page.</ResponseField>
+            <ResponseField name="breadcrumbPath" type="array">
+              Ordered array of ancestor category names forming a breadcrumb trail from root to current category.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+
+        <ResponseField name="parentCategory" type="object | null">
+          The immediate parent category, or `null` if the requested category is a top-level category.
+          <Expandable title="properties">
+            <ResponseField name="id" type="string">Parent category ID.</ResponseField>
+            <ResponseField name="name" type="string">Parent category name.</ResponseField>
+            <ResponseField name="url" type="string">Amazon URL for the parent category's best-seller page.</ResponseField>
+          </Expandable>
+        </ResponseField>
+
+        <ResponseField name="childCategories" type="array">
+          Array of subcategories beneath the current category. Empty array if no subcategories exist.
+          <Expandable title="childCategories[]">
+            <ResponseField name="id" type="string">Child category ID.</ResponseField>
+            <ResponseField name="name" type="string">Child category name.</ResponseField>
+            <ResponseField name="url" type="string">Amazon URL for the child category's best-seller page.</ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example response
+
+```json
+{
+  "data": {
+    "amazonBestSellers": {
+      "productResults": {
+        "results": [
+          {
+            "title": "Fire TV Stick 4K Max Streaming Device, Wi-Fi 6E, Alexa Voice Remote",
+            "url": "https://www.amazon.com/dp/B0BP9SNVH9",
+            "asin": "B0BP9SNVH9",
+            "price": {
+              "symbol": "$",
+              "value": 59.99,
+              "currency": "USD",
+              "display": "$59.99"
+            },
+            "mainImageUrl": "https://m.media-amazon.com/images/I/61HnD3KNEAL._AC_SL1000_.jpg",
+            "rating": 4.6,
+            "ratingsTotal": 87423,
+            "isPrime": true,
+            "bestSellersRank": 1
+          },
+          {
+            "title": "Echo Pop — Full Sound Compact Smart Speaker with Alexa",
+            "url": "https://www.amazon.com/dp/B09WX9XMJP",
+            "asin": "B09WX9XMJP",
+            "price": {
+              "symbol": "$",
+              "value": 39.99,
+              "currency": "USD",
+              "display": "$39.99"
+            },
+            "mainImageUrl": "https://m.media-amazon.com/images/I/61aFLfqiLgL._AC_SL1000_.jpg",
+            "rating": 4.5,
+            "ratingsTotal": 42318,
+            "isPrime": true,
+            "bestSellersRank": 2
+          },
+          {
+            "title": "Kindle Paperwhite (16 GB) — Now with 3 months free Kindle Unlimited",
+            "url": "https://www.amazon.com/dp/B09TMF6742",
+            "asin": "B09TMF6742",
+            "price": {
+              "symbol": "$",
+              "value": 139.99,
+              "currency": "USD",
+              "display": "$139.99"
+            },
+            "mainImageUrl": "https://m.media-amazon.com/images/I/61MFsTyFmoL._AC_SL1000_.jpg",
+            "rating": 4.7,
+            "ratingsTotal": 115060,
+            "isPrime": true,
+            "bestSellersRank": 3
+          }
+        ],
+        "pageInfo": {
+          "currentPage": 1,
+          "totalPages": 5,
+          "totalResults": 100,
+          "hasNextPage": true,
+          "hasPrevPage": false
+        }
+      },
+      "categoryInfo": {
+        "currentCategory": {
+          "id": "172282",
+          "name": "Electronics",
+          "url": "https://www.amazon.com/Best-Sellers-Electronics/zgbs/electronics/",
+          "breadcrumbPath": ["Best Sellers", "Electronics"]
+        },
+        "parentCategory": null,
+        "childCategories": [
+          {
+            "id": "16225009011",
+            "name": "Camera & Photo",
+            "url": "https://www.amazon.com/Best-Sellers-Camera-Photo/zgbs/electronics/502394/"
+          },
+          {
+            "id": "1266092011",
+            "name": "Computers & Accessories",
+            "url": "https://www.amazon.com/Best-Sellers-Computers-Accessories/zgbs/electronics/541966/"
+          },
+          {
+            "id": "11091801",
+            "name": "Headphones",
+            "url": "https://www.amazon.com/Best-Sellers-Electronics-Headphones/zgbs/electronics/745526/"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+---
+
+## Error handling
+
+You must supply either a `categoryId` or a `url` parameter. Providing neither, or supplying a `categoryId` that does not exist in the selected marketplace, returns a `400` error.
+
+```json
+{
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Either 'categoryId' or 'url' is required.",
+    "status": 400
+  }
+}
+```
+
+| Status | Meaning |
+|--------|---------|
+| `400` | Missing or invalid query parameters |
+| `401` | Missing or invalid `API-KEY` / Bearer token |
+| `429` | Rate limit exceeded |
+| `500` | Upstream Amazon error or internal server error |

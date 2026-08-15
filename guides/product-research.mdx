@@ -1,0 +1,147 @@
+---
+title: "Amazon Product Research with Glade API"
+sidebarTitle: "Product Research"
+description: "Use Glade API to research Amazon products at scale — fetch product details, search by keyword, analyze best sellers, and convert between ASINs and GTINs."
+---
+
+Glade API gives you the data layer for Amazon product research. Whether you're validating a new product idea, tracking competitors, or building a product catalog, this guide shows you how to combine Glade's endpoints to get the insight you need.
+
+## Searching for products
+
+`GET /api/amazon/search` runs a keyword search against Amazon's product index and returns ranked results exactly as a shopper would see them. Pass a `searchTerm` to get started, then layer in filters to narrow results.
+
+```bash
+curl "https://api.glade.dev/api/amazon/search?searchTerm=wireless+earbuds&domain=US&sort=featured&page=1" \
+  -H "API-KEY: glade_live_lookup_your_key"
+```
+
+**Supported query parameters:**
+
+| Parameter | Description |
+|---|---|
+| `searchTerm` | The keyword or phrase to search for |
+| `domain` | Marketplace (e.g. `US`, `UK`, `DE`) |
+| `categoryId` | Restrict results to a specific category node |
+| `sort` | Sort order: `featured`, `price_asc`, `price_desc`, `review_rank`, `newest` |
+| `conditions` | Filter by condition: `new`, `used`, `refurbished`, `collectible` |
+| `minPrice` | Minimum price in the marketplace's local currency |
+| `maxPrice` | Maximum price in the marketplace's local currency |
+| `page` | Page number for pagination |
+
+The response includes two top-level keys under `data.amazonSearch`:
+
+- **`productResults.results[]`** — the ranked product list. Each item contains `title`, `asin`, `price`, `rating`, `ratingsTotal`, `isPrime`, `sponsored`, and `coupon`.
+- **`productResults.pageInfo`** — pagination metadata: `currentPage`, `totalPages`, and `hasNextPage`.
+
+Use `hasNextPage` to drive a loop when you need to collect results beyond the first page.
+
+## Fetching full product details
+
+Search results give you enough to triage a product, but for deep research you need the full record. After collecting ASINs from search, call `GET /api/amazon/product` for each one to retrieve the complete data set.
+
+Available fields on a full product record:
+
+<CardGroup cols={2}>
+  <Card title="Identity & listing" icon="tag">
+    `title`, `subtitle`, `brand`, `asin`, `url`, `isNew`
+  </Card>
+  <Card title="Pricing & availability" icon="circle-dollar-to-slot">
+    `price`, `isInStock`, `isPrime`, `coupon`, `seller`
+  </Card>
+  <Card title="Media" icon="image">
+    `mainImageUrl`, `imageUrls[]`
+  </Card>
+  <Card title="Content & specs" icon="list">
+    `featureBullets[]`, `technicalSpecifications`, `categories`, `rating`, `ratingsTotal`
+  </Card>
+</CardGroup>
+
+The following TypeScript example wraps the product endpoint in a typed helper:
+
+```typescript
+interface GladeProduct {
+  title: string;
+  brand?: string;
+  asin: string;
+  price?: { value: number; currency: string; display: string };
+  rating?: number;
+  ratingsTotal?: number;
+  isInStock?: boolean;
+  isPrime?: boolean;
+  featureBullets?: string[];
+}
+
+async function getProduct(asin: string, domain = 'US'): Promise<GladeProduct> {
+  const res = await fetch(
+    `https://api.glade.dev/api/amazon/product?asin=${asin}&domain=${domain}`,
+    { headers: { 'API-KEY': process.env.GLADE_API_KEY! } }
+  );
+  const body = await res.json();
+  return body.data.amazonProduct;
+}
+```
+
+If you only need a subset of fields, use the GraphQL interface instead of REST. GraphQL lets you request exactly the fields you want, which keeps response payloads small when you're processing large batches of ASINs.
+
+## Analyzing best sellers
+
+Best-seller rankings tell you which products have the highest sustained sales velocity in a category. Glade API exposes two endpoints to make use of this data.
+
+**List best sellers in a category:**
+
+```bash
+curl "https://api.glade.dev/api/amazon/bestsellers?domain=US&categoryId=2625373011" \
+  -H "API-KEY: glade_live_lookup_your_key"
+```
+
+Each product in the response includes a `bestSellersRank` value. Lower ranks (closer to #1) indicate higher sales volume. Track rank movement over time to spot rising products before they become dominant.
+
+**Browse all available best-seller categories:**
+
+```bash
+curl "https://api.glade.dev/api/amazon/bestseller-categories?domain=US" \
+  -H "API-KEY: glade_live_lookup_your_key"
+```
+
+Use `GET /api/amazon/bestseller-categories` to discover valid `categoryId` values for the marketplace you're researching. Categories are hierarchical — you can drill down from broad departments to specific niches.
+
+## Converting between ASINs and GTINs
+
+ASINs are Amazon-specific identifiers, but the wider retail world uses GTINs (Global Trade Item Numbers), which include UPCs and EANs. Glade API lets you translate between the two when you need to cross-reference Amazon data with external databases.
+
+```bash
+# ASIN → GTIN
+curl "https://api.glade.dev/api/amazon/product/gtin-from-asin?asin=B0D1XD1ZV3&domain=US" \
+  -H "API-KEY: glade_live_lookup_your_key"
+
+# GTIN → ASIN
+curl "https://api.glade.dev/api/amazon/product/asin-from-gtin?gtin=0194252099360&domain=US" \
+  -H "API-KEY: glade_live_lookup_your_key"
+```
+
+Common use cases for ASIN/GTIN conversion:
+
+- **Catalog enrichment** — you have a retailer database keyed by UPC and want to add Amazon pricing, ratings, or review data.
+- **Competitor mapping** — you know a competitor's barcode from a physical product and want to find their Amazon listing.
+- **Inventory reconciliation** — you manage warehouse stock by GTIN and need to match items to their corresponding Amazon listings for repricing or listing management.
+
+## Sales estimates
+
+Before entering a category or launching a competing product, you need to know whether real demand exists. `GET /api/amazon/product/sales` returns estimated unit sales at three time horizons:
+
+| Field | Description |
+|---|---|
+| `weeklyUnitSales` | Estimated units sold in the past 7 days |
+| `monthlyUnitSales` | Estimated units sold in the past 30 days |
+| `annualUnitSales` | Estimated units sold in the past 12 months |
+
+```bash
+curl "https://api.glade.dev/api/amazon/product/sales?asin=B0D1XD1ZV3&domain=US" \
+  -H "API-KEY: glade_live_lookup_your_key"
+```
+
+Use `monthlyUnitSales` as your primary demand signal — it smooths out short-term spikes while still reflecting current conditions. Use `weeklyUnitSales` to detect seasonal surges or product launches in progress.
+
+<Tip>
+  Combine sales estimates with best-seller rank data to prioritize which categories have high volume but weak competition. A category with strong sales across many products but no single dominant #1 is often easier to enter than one where a single listing holds a dominant rank.
+</Tip>

@@ -1,0 +1,153 @@
+---
+title: "ASIN and GTIN Conversion Endpoints"
+sidebarTitle: "GTIN / ASIN Lookup"
+description: "Convert between Amazon ASINs and GTINs (barcodes) using two lookup endpoints. Useful for cross-referencing Amazon with retail databases and product catalogs."
+---
+
+Glade provides two lightweight conversion endpoints that let you translate between Amazon ASINs and GTINs (Global Trade Item Numbers such as UPCs and EANs). Use these when you need to reconcile your product catalog against Amazon listings, enrich retail data with Amazon identifiers, or cross-reference inventory systems that speak different identifier formats.
+
+---
+
+## GTIN from ASIN
+
+Look up the GTIN (barcode) associated with a given Amazon ASIN. Returns `null` when Amazon has not registered a GTIN for the product.
+
+### Request
+
+```http
+GET https://api.glade.dev/api/amazon/product/gtin-from-asin
+```
+
+#### Query Parameters
+
+<ParamField query="domain" type="string" default="US">
+  The Amazon marketplace to query. Accepted values: `US` `UK` `CA` `DE` `FR` `IT` `ES` `AU` `IN` `MX` `BR` `JP` `PL`. Defaults to `US` when omitted.
+</ParamField>
+
+<ParamField query="asin" type="string" required>
+  The Amazon Standard Identification Number to convert (e.g. `B09XS7JWHH`). This parameter is required.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.amazonProduct.gtin" type="string | null">
+  The GTIN (UPC, EAN, or ISBN) associated with this ASIN, or `null` if one is not available.
+</ResponseField>
+
+#### Example Response
+
+```json
+{
+  "data": {
+    "amazonProduct": {
+      "gtin": "027242921436"
+    }
+  }
+}
+```
+
+#### Null response (no GTIN registered)
+
+```json
+{
+  "data": {
+    "amazonProduct": {
+      "gtin": null
+    }
+  }
+}
+```
+
+### curl Example
+
+```bash
+curl --request GET \
+  --url 'https://api.glade.dev/api/amazon/product/gtin-from-asin?asin=B09XS7JWHH&domain=US' \
+  --header 'API-KEY: YOUR_API_KEY'
+```
+
+---
+
+## ASIN from GTIN
+
+Look up the Amazon ASIN that corresponds to a given GTIN (barcode). Returns `null` when no matching Amazon listing is found in the specified marketplace.
+
+### Request
+
+```http
+GET https://api.glade.dev/api/amazon/product/asin-from-gtin
+```
+
+#### Query Parameters
+
+<ParamField query="domain" type="string" default="US">
+  The Amazon marketplace to query. Accepted values: `US` `UK` `CA` `DE` `FR` `IT` `ES` `AU` `IN` `MX` `BR` `JP` `PL`. Defaults to `US` when omitted.
+</ParamField>
+
+<ParamField query="gtin" type="string" required>
+  The GTIN (UPC, EAN, or ISBN) to convert (e.g. `027242921436`). This parameter is required.
+</ParamField>
+
+### Response
+
+<ResponseField name="data.amazonProduct.asin" type="string | null">
+  The ASIN of the matching Amazon product, or `null` if no listing is found in the specified marketplace.
+</ResponseField>
+
+#### Example Response
+
+```json
+{
+  "data": {
+    "amazonProduct": {
+      "asin": "B09XS7JWHH"
+    }
+  }
+}
+```
+
+#### Null response (no matching listing)
+
+```json
+{
+  "data": {
+    "amazonProduct": {
+      "asin": null
+    }
+  }
+}
+```
+
+### curl Example
+
+```bash
+curl --request GET \
+  --url 'https://api.glade.dev/api/amazon/product/asin-from-gtin?gtin=027242921436&domain=US' \
+  --header 'API-KEY: YOUR_API_KEY'
+```
+
+---
+
+## Error Handling
+
+Both endpoints use the same error envelope. The HTTP status code mirrors the `code` field inside the `errors` array.
+
+| Status | Meaning |
+|--------|---------|
+| `400`  | Bad request — a required parameter is missing or malformed. |
+| `401`  | Unauthorized — your API key is missing or invalid. |
+| `402`  | Payment required — your plan limit has been reached. |
+| `429`  | Too many requests — you have exceeded the rate limit for your plan. |
+| `502`  | Bad gateway — Amazon returned an unexpected response; retry with exponential back-off. |
+
+```json
+{
+  "success": false,
+  "errors": [
+    {
+      "code": 400,
+      "message": "Missing required parameter: asin"
+    }
+  ]
+}
+```

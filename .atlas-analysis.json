@@ -1,0 +1,117 @@
+{
+  "projectType": "api-service",
+  "projectName": "Glade API",
+  "projectDescription": "A Canopy-compatible REST, GraphQL, and MCP API for Amazon product, search, seller, category, offer, review, deal, and estimate data across 13 global marketplaces.",
+  "theme": "luma",
+  "primaryColor": "#ef7025",
+  "lightColor": "#eec9bc",
+  "darkColor": "#4fa1ab",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/interfaces",
+              "concepts/marketplaces",
+              "concepts/units-and-billing",
+              "concepts/rate-limits"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/price-monitoring",
+              "guides/product-research",
+              "guides/review-intelligence",
+              "guides/ai-agents"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Products",
+            "pages": [
+              "api-reference/product",
+              "api-reference/product-variants",
+              "api-reference/product-offers",
+              "api-reference/product-reviews",
+              "api-reference/stock-estimates",
+              "api-reference/sales-estimates",
+              "api-reference/gtin-asin-lookup"
+            ]
+          },
+          {
+            "group": "Search & Discovery",
+            "pages": [
+              "api-reference/search",
+              "api-reference/autocomplete",
+              "api-reference/deals",
+              "api-reference/bestsellers",
+              "api-reference/bestseller-categories"
+            ]
+          },
+          {
+            "group": "Sellers & Categories",
+            "pages": [
+              "api-reference/seller",
+              "api-reference/author",
+              "api-reference/categories",
+              "api-reference/category"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Canopy-compatible REST API for Amazon product data",
+    "GraphQL interface with the same operations and quota semantics",
+    "MCP (Model Context Protocol) endpoint for AI agents and LLM tool-use",
+    "Coverage across 13 Amazon marketplaces (US, UK, CA, DE, FR, IT, ES, AU, IN, MX, BR, JP, PL)",
+    "Product details, pricing, images, ratings, and feature bullets",
+    "Product reviews with filtering by rating, verified purchase, and keyword search",
+    "Third-party seller offers with delivery and condition details",
+    "Sales and stock estimates for inventory and market research",
+    "Search with filters, sorting, price range, and pagination",
+    "Deals feed with lightning deal detection and discount metadata",
+    "Best sellers ranked by category",
+    "ASIN ↔ GTIN (barcode) conversion utilities",
+    "Usage-based pricing — errors are never charged",
+    "Reveal-once API keys scoped to your workspace"
+  ],
+  "publicApiSurface": [
+    "GET /api/amazon/product",
+    "GET /api/amazon/product/gtin-from-asin",
+    "GET /api/amazon/product/asin-from-gtin",
+    "GET /api/amazon/product/variants",
+    "GET /api/amazon/product/stock",
+    "GET /api/amazon/product/sales",
+    "GET /api/amazon/product/reviews",
+    "GET /api/amazon/product/offers",
+    "GET /api/amazon/search",
+    "GET /api/amazon/autocomplete",
+    "GET /api/amazon/categories",
+    "GET /api/amazon/category",
+    "GET /api/amazon/seller",
+    "GET /api/amazon/author",
+    "GET /api/amazon/deals",
+    "GET /api/amazon/bestsellers",
+    "GET /api/amazon/bestseller-categories",
+    "POST /api/graphql",
+    "POST /api/mcp"
+  ]
+}

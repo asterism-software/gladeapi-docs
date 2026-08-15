@@ -1,0 +1,146 @@
+---
+title: "Connect Glade API to AI Agents via MCP"
+sidebarTitle: "AI Agents"
+description: "Give AI agents and LLMs structured Amazon data access using Glade API's MCP endpoint. All 17 operations are exposed as typed tools with built-in prompt injection protection."
+---
+
+Glade API's MCP (Model Context Protocol) endpoint exposes all 17 Amazon data operations as typed tools at `/api/mcp`. Any MCP-compatible AI agent, LLM, or autonomous workflow can call these tools to fetch live Amazon product, search, review, offer, and sales data without writing custom integration code.
+
+## What is MCP?
+
+MCP (Model Context Protocol) is an open standard for exposing typed tools to AI agents. Clients send JSON-RPC requests describing which tool to call and with what parameters. Glade API executes the corresponding Amazon data operation and returns structured, schema-validated results.
+
+Every piece of marketplace content that flows through the MCP endpoint — product titles, descriptions, review bodies, seller names — is treated as opaque data, never as tool instructions. This design prevents AI agents from being manipulated by content embedded in Amazon listings or reviews.
+
+<Note>
+  Glade API's MCP endpoint passes marketplace content as opaque data objects, never as instructions. This prevents AI agents from being manipulated by product descriptions or reviews.
+</Note>
+
+## Connecting to the MCP endpoint
+
+Send JSON-RPC 2.0 requests to the following endpoint:
+
+```
+POST https://api.glade.dev/api/mcp
+```
+
+Glade API accepts your API key in any of these header formats, so you can use whichever convention your MCP client already sends:
+
+| Header | Example value |
+|---|---|
+| `API-KEY` | `glade_live_lookup_your_key` |
+| `GLADE-API-KEY` | `glade_live_lookup_your_key` |
+| `X-API-KEY` | `glade_live_lookup_your_key` |
+| `Authorization` | `Bearer glade_live_lookup_your_key` |
+
+The endpoint is compatible with any MCP client, including Claude Desktop, Cursor, and custom agents built on the MCP SDK.
+
+<Tabs>
+  <Tab title="Claude Desktop">
+    Add the following to your `claude_desktop_config.json` under the `mcpServers` key:
+
+    ```json
+    {
+      "mcpServers": {
+        "glade": {
+          "url": "https://api.glade.dev/api/mcp",
+          "headers": {
+            "API-KEY": "glade_live_lookup_your_key"
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Cursor">
+    Open **Settings → MCP** and add a new server entry:
+
+    ```json
+    {
+      "name": "glade",
+      "url": "https://api.glade.dev/api/mcp",
+      "headers": {
+        "API-KEY": "glade_live_lookup_your_key"
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Custom agent (Python MCP SDK)">
+    ```python
+    from mcp import ClientSession
+    from mcp.client.streamable_http import streamablehttp_client
+
+    async with streamablehttp_client(
+        "https://api.glade.dev/api/mcp",
+        headers={"API-KEY": "glade_live_lookup_your_key"},
+    ) as (read, write, _):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            result = await session.call_tool(
+                "get_AmazonProduct",
+                {"asin": "B0D1XD1ZV3", "domain": "US"},
+            )
+    ```
+  </Tab>
+</Tabs>
+
+## Installing the Agent Skill
+
+Glade API provides a downloadable `amazon-data` Skill file designed to help AI agents use the MCP endpoint effectively. The Skill documents safe API key setup, how to choose a marketplace, pagination strategies, cost awareness, data freshness considerations, and when to prefer REST, GraphQL, or MCP for a given task.
+
+Download the Skill file and add it to your agent's context:
+
+```
+https://gladeapi.com/skills/amazon-data/SKILL.md
+```
+
+With the Skill loaded, your agent can make informed decisions about which tool to call, how many pages to fetch, and how to interpret result fields — without you needing to encode that logic manually in a system prompt.
+
+## Available tools
+
+All 17 REST operations are available as MCP tools. Every tool uses the same parameter validation and response contract as the corresponding REST endpoint.
+
+| Tool name | What it fetches |
+|---|---|
+| `get_AmazonProduct` | Full product details by ASIN, GTIN, or URL |
+| `get_AmazonProductVariants` | All variants (color, size, style, etc.) for a product |
+| `get_AmazonProductReviews` | Paginated reviews with rating and keyword filtering |
+| `get_AmazonProductOffers` | Third-party seller offers for an ASIN |
+| `get_AmazonStockEstimates` | Current stock level and availability signals |
+| `get_AmazonSalesEstimates` | Weekly, monthly, and annual unit sales estimates |
+| `get_AmazonGtinFromAsin` | Barcode (UPC/EAN) lookup from an ASIN |
+| `get_AmazonAsinFromGtin` | ASIN lookup from a barcode |
+| `get_AmazonProductSearchResults` | Keyword search with category, price, and sort filters |
+| `get_AmazonSearchAutocompleteResults` | Search suggestions for a partial query |
+| `get_AmazonDeals` | Current deals and lightning deals by category |
+| `get_AmazonBestSellers` | Best-seller rankings by category node |
+| `get_AmazonBestSellerCategories` | Available best-seller category trees |
+| `get_AmazonSeller` | Seller profile and active product listings |
+| `get_AmazonAuthor` | Author profile and book listings |
+| `get_AmazonProductCategory` | Category details and products in a category |
+| `get_AmazonProductCategoryTaxonomy` | Full category tree for a marketplace |
+
+## Example agent workflow
+
+Here's a complete example of an AI assistant helping a user find the best wireless earbuds under £50 in the UK marketplace. The agent chains four MCP tool calls to produce a personalized recommendation.
+
+<Steps>
+  <Step title="Search for matching products">
+    The agent calls `get_AmazonProductSearchResults` with `searchTerm="wireless earbuds"`, `domain="UK"`, and `maxPrice="50"`. The response returns a ranked list of products with titles, ASINs, prices, and ratings.
+  </Step>
+  <Step title="Select the top candidates">
+    The agent filters the results to the three products with the highest `rating` values. Products with fewer than a threshold number of `ratingsTotal` (for example, fewer than 100 reviews) are deprioritized to avoid noise from lightly reviewed listings.
+  </Step>
+  <Step title="Fetch reviews for each candidate">
+    The agent calls `get_AmazonProductReviews` for each of the three ASINs, filtering to `rating=FIVE_STAR` and `onlyVerifiedReviews=true`. This surfaces the strongest positive signals from confirmed buyers.
+  </Step>
+  <Step title="Summarize and present">
+    The agent reads the `body` field from the top reviews for each product and synthesizes a short pros/cons summary for the user — grounded in real customer language, not marketing copy.
+  </Step>
+</Steps>
+
+<Tip>
+  Each step consumes one unit. For cost-conscious agents, prefer GraphQL to fetch only the fields you need, reducing response size while keeping unit cost the same.
+</Tip>
+
+The same chaining pattern applies to many other research and shopping tasks: sourcing workflows, competitor analysis, catalog enrichment, and inventory monitoring. Because every tool returns structured, typed data, agents can reliably parse and act on results without fragile text extraction.

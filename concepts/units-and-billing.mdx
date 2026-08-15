@@ -1,0 +1,75 @@
+---
+title: "API Usage Units and Billing Explained"
+sidebarTitle: "Units & Billing"
+description: "Glade API charges one unit per successful operation. Errors, rate limits, and auth failures are never charged. Learn how units work and how to estimate costs."
+---
+
+Glade API uses a simple unit-based billing model — one successful operation consumes one unit, regardless of interface (REST, GraphQL, or MCP) or whether the data came from a live provider or cache.
+
+---
+
+## What counts as a unit
+
+Every successful operation deducts exactly one unit from your balance, no matter how many fields you request or which interface you use:
+
+- **One successful REST call** = 1 unit
+- **One successful GraphQL operation** = 1 unit
+- **One successful MCP tool invocation** = 1 unit
+- **Cache hits** = 1 unit (you receive the same product value, freshness is preserved)
+- **Internal retries and provider fan-out** = 0 additional units (Glade API absorbs these transparently)
+
+<Note>
+  You are never charged for errors. Validation errors, auth failures, rate limits, quota failures, provider errors, and timeouts all consume zero units.
+</Note>
+
+---
+
+## Plans
+
+Glade API offers four plans to fit every scale of usage. All plans include 100 free units to get started.
+
+| Plan | Price | Units included | Requests/min | Concurrent | Interfaces | Overage |
+|---|---|---|---|---|---|---|
+| **Hobby** | $0 | 100 | 30 | 2 | REST only | Hard cap (no overage) |
+| **Pay as you go** | $0.01/unit | 100 | 120 | 10 | REST + GraphQL + MCP | $0.01/unit |
+| **Premium 20K** | $99/month | 20,000 | 600 | 50 | REST + GraphQL + MCP | $0.01/unit |
+| **Enterprise** | Custom | 1,000,000 | 1,200 | 100 | REST + GraphQL + MCP | Hard cap option available |
+
+For full plan details including annual pricing and volume discounts, visit [gladeapi.com/pricing](https://gladeapi.com/pricing).
+
+---
+
+## Estimating your usage
+
+Your monthly unit consumption depends on the number of operations you run and the number of marketplaces you query.
+
+**Example:** If you fetch product details for 1,000 ASINs daily across 2 marketplaces, that is 2,000 units per day or approximately 60,000 units per month.
+
+A few reference points to help you plan:
+
+- The **Premium 20K** plan covers approximately 666 products per day if you fetch each ASIN from a single marketplace (20,000 units ÷ 30 days).
+- If you query the same ASIN across two marketplaces, that halves your daily ASIN budget to ~333 products per day on Premium 20K.
+- For workloads that mix product lookups, search queries, and offer checks, count each operation individually — they each consume one unit.
+
+Use the volume calculator at [gladeapi.com/pricing](https://gladeapi.com/pricing) to model your specific usage pattern before committing to a plan.
+
+---
+
+## Handling quota errors
+
+When you exhaust your unit balance on a **Hobby** plan or any plan with a hard cap enabled, Glade API returns an HTTP `402` response. Your request is not fulfilled and no additional units are deducted.
+
+```json
+{
+  "success": false,
+  "errors": [
+    { "code": 402, "message": "Quota exceeded. Upgrade your plan or wait for your quota to reset." }
+  ]
+}
+```
+
+To resolve a quota error:
+
+- **Hobby plan:** Upgrade to Pay as you go to unlock per-unit overage billing and eliminate the hard cap.
+- **Pay as you go or Premium:** Overage billing kicks in automatically — you will not hit a hard cap unless you have manually enabled one in your dashboard.
+- **Enterprise:** Contact your account manager to adjust your quota or enable a hard cap for cost control.

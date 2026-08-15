@@ -1,0 +1,137 @@
+---
+title: "Analyze Amazon Reviews with Glade API"
+sidebarTitle: "Review Intelligence"
+description: "Fetch, filter, and analyze Amazon product reviews using Glade API. Learn how to paginate reviews, filter by star rating, and search review text at scale."
+---
+
+Amazon product reviews are a rich source of customer feedback, competitive intelligence, and product development insight. Glade API's reviews endpoint gives you paginated access to review data with filtering and search — no scraping required.
+
+## Fetching product reviews
+
+`GET /api/amazon/product/reviews` returns structured review data for any ASIN. Pass the ASIN and domain to get started:
+
+```bash
+curl "https://api.glade.dev/api/amazon/product/reviews?asin=B0D1XD1ZV3&domain=US&page=1" \
+  -H "API-KEY: glade_live_lookup_your_key"
+```
+
+**Supported query parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `asin` | string | The product ASIN |
+| `domain` | string | Marketplace (e.g. `US`, `UK`, `DE`) |
+| `page` | integer | Page number for paginated results |
+| `rating` | string | Filter by star rating (see below) |
+| `onlyVerifiedReviews` | boolean | When `true`, returns only verified purchase reviews |
+| `search` | string | Keyword search within review text |
+
+The response contains two review lists under `data.amazonProduct`:
+
+- **`topReviews`** — Amazon's featured/highlighted reviews for the product. These are always returned regardless of pagination.
+- **`reviewsPaginated.reviews[]`** — the full paginated review set, subject to your filters.
+
+Each review object includes the following fields:
+
+| Field | Description |
+|---|---|
+| `id` | Unique review identifier |
+| `title` | Review headline |
+| `body` | Full review text |
+| `imageUrls[]` | Customer-uploaded images |
+| `videos[]` | Customer-uploaded video clips |
+| `rating` | Star rating (1–5) |
+| `helpfulVotes` | Number of users who found the review helpful |
+| `verifiedPurchase` | Whether Amazon verified the reviewer bought the product |
+| `reviewer.id` | Anonymous reviewer identifier |
+| `reviewer.name` | Display name |
+| `reviewer.url` | Link to the reviewer's Amazon profile |
+
+## Filtering reviews
+
+Glade API's filtering parameters let you narrow the review set before it reaches your application, saving both processing time and API units.
+
+**Filter by star rating** using the `rating` parameter:
+
+| Value | Matches |
+|---|---|
+| `ALL` | All ratings (default) |
+| `FIVE_STAR` | 5-star reviews only |
+| `FOUR_STAR` | 4-star reviews only |
+| `THREE_STAR` | 3-star reviews only |
+| `TWO_STAR` | 2-star reviews only |
+| `ONE_STAR` | 1-star reviews only |
+
+**Filter to verified purchases only** by adding `onlyVerifiedReviews=true`. Verified reviews carry more signal because Amazon has confirmed the reviewer actually bought the product.
+
+**Search within review text** using the `search` parameter. Amazon indexes the full text of reviews, so you can use natural keywords to find mentions of specific features, problems, or topics.
+
+The following example fetches 1-star verified reviews that mention the word "defective" — useful for monitoring quality issues on your own products or a competitor's:
+
+```bash
+curl "https://api.glade.dev/api/amazon/product/reviews?asin=B0D1XD1ZV3&domain=US&rating=ONE_STAR&onlyVerifiedReviews=true&search=defective" \
+  -H "API-KEY: glade_live_lookup_your_key"
+```
+
+You can combine all three filters simultaneously. The filters are applied server-side before the response is returned, so you receive only the reviews that match all conditions.
+
+## Paginating through all reviews
+
+For popular products with thousands of reviews, you'll need to iterate through multiple pages to collect the full data set. The `reviewsPaginated.pageInfo` object tells you where you are and whether more pages exist:
+
+| Field | Description |
+|---|---|
+| `currentPage` | The page number just returned |
+| `totalPages` | Total number of pages available |
+| `totalResults` | Total number of reviews matching your filters |
+| `hasNextPage` | `true` if there is a page after the current one |
+| `hasPrevPage` | `true` if there is a page before the current one |
+
+The following Python function iterates all pages and returns a flat list of every review:
+
+```python
+import os, requests
+
+GLADE_KEY = os.environ['GLADE_API_KEY']
+
+def get_all_reviews(asin: str, domain: str = 'US') -> list:
+    all_reviews = []
+    page = 1
+    while True:
+        resp = requests.get(
+            'https://api.glade.dev/api/amazon/product/reviews',
+            params={'asin': asin, 'domain': domain, 'page': page},
+            headers={'API-KEY': GLADE_KEY},
+        )
+        data = resp.json()['data']['amazonProduct']
+        paginated = data.get('reviewsPaginated', {})
+        reviews = paginated.get('reviews', [])
+        all_reviews.extend(reviews)
+        if not paginated.get('pageInfo', {}).get('hasNextPage'):
+            break
+        page += 1
+    return all_reviews
+```
+
+<Warning>
+  Fetching every review page for a product with thousands of reviews consumes one unit per page. Set a page limit or use the `search` filter to narrow results first.
+</Warning>
+
+For most analytical use cases, you don't need every review — you need a representative sample. Consider capping collection at 10–20 pages (typically 400–800 reviews), or use the `search` filter to focus on the specific topics you care about.
+
+## Use cases
+
+<CardGroup cols={2}>
+  <Card title="Sentiment analysis" icon="face-smile">
+    Collect reviews at scale, run NLP over the `body` field, and surface recurring pain points. Use `rating` filters to compare language patterns between satisfied and dissatisfied customers.
+  </Card>
+  <Card title="Feature requests" icon="lightbulb">
+    Search for words like `"wish"`, `"if only"`, or `"missing"` to surface unmet customer needs. Review text is often more candid about feature gaps than any survey.
+  </Card>
+  <Card title="Competitive intelligence" icon="magnifying-glass-chart">
+    Compare `rating` distributions and review themes across competing ASINs in the same category. Products with lower average ratings in specific areas reveal exploitable weaknesses.
+  </Card>
+  <Card title="Quality monitoring" icon="triangle-exclamation">
+    Set up a scheduled job that polls 1-star verified reviews for your own products. Alert when one-star volume spikes, giving you an early warning before ratings visibly degrade.
+  </Card>
+</CardGroup>

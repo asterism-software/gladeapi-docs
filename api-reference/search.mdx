@@ -1,0 +1,271 @@
+---
+title: "GET /api/amazon/search — Amazon Product Search"
+sidebarTitle: "Search"
+description: "Search Amazon products by keyword with filters for category, price range, condition, sort order, and pagination across any supported marketplace."
+---
+
+The search endpoint lets you query Amazon's product catalog by keyword and refine results using category, price range, condition, sort order, and pagination. Results include product titles, prices, ratings, Prime eligibility, and available filter facets — giving you everything you need to build a full-featured product search experience.
+
+## Request
+
+<ParamField query="searchTerm" type="string" required>
+  The keyword or phrase to search for (e.g., `"noise cancelling headphones"`).
+</ParamField>
+
+<ParamField query="domain" type="string" default="US">
+  The Amazon marketplace to query. Supported values: `US`, `UK`, `CA`, `DE`, `FR`, `IT`, `ES`, `AU`, `IN`, `MX`, `BR`, `JP`, `PL`. Defaults to `US`.
+</ParamField>
+
+<ParamField query="categoryId" type="string">
+  Restrict results to a specific Amazon category. Use the [autocomplete](/api-reference/autocomplete) or [bestseller-categories](/api-reference/bestseller-categories) endpoints to discover valid category IDs.
+</ParamField>
+
+<ParamField query="sort" type="string">
+  Sort order for results. Common values:
+  - `featured` — Amazon's default relevance sort
+  - `price-asc-rank` — lowest price first
+  - `price-desc-rank` — highest price first
+  - `review-rank` — top-rated first
+  - `date-desc-rank` — newest arrivals first
+</ParamField>
+
+<ParamField query="conditions" type="string">
+  Filter by item condition. Accepted values include `new`, `used`, `renewed`, and `collectible`.
+</ParamField>
+
+<ParamField query="minPrice" type="string">
+  Minimum price filter (in the marketplace's local currency). Pass as a plain numeric string, e.g., `"25"`.
+</ParamField>
+
+<ParamField query="maxPrice" type="string">
+  Maximum price filter (in the marketplace's local currency). Pass as a plain numeric string, e.g., `"200"`.
+</ParamField>
+
+<ParamField query="page" type="integer">
+  Page number to retrieve. Use alongside `pageInfo.totalPages` in the response to paginate through results.
+</ParamField>
+
+<ParamField query="limit" type="integer">
+  Number of results to return per page.
+</ParamField>
+
+### Example request
+
+```bash
+curl "https://api.glade.dev/api/amazon/search?searchTerm=noise%20cancelling%20headphones&domain=US&maxPrice=200" \
+  -H "API-KEY: YOUR_API_KEY"
+```
+
+---
+
+## Response
+
+A successful response returns a `data.amazonProductSearchResults` object containing filter refinements and a paginated list of products.
+
+<ResponseField name="data.amazonProductSearchResults" type="object">
+  <Expandable title="properties" defaultOpen>
+    <ResponseField name="availableRefinements" type="array">
+      Filter facets available for the current search. Use these to build dynamic filter UIs.
+
+      <Expandable title="availableRefinements[]">
+        <ResponseField name="name" type="string">
+          Display name of the filter group (e.g., `"Brand"`, `"Customer Reviews"`).
+        </ResponseField>
+        <ResponseField name="options" type="array">
+          <Expandable title="options[]">
+            <ResponseField name="name" type="string">
+              Display label for this filter option (e.g., `"Sony"`, `"4 Stars & Up"`).
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="productResults" type="object">
+      <Expandable title="properties">
+        <ResponseField name="results" type="array">
+          Array of matched product objects.
+
+          <Expandable title="results[]">
+            <ResponseField name="title" type="string">
+              Full product title as shown on Amazon.
+            </ResponseField>
+            <ResponseField name="url" type="string">
+              Canonical Amazon product page URL.
+            </ResponseField>
+            <ResponseField name="asin" type="string">
+              Amazon Standard Identification Number uniquely identifying the product.
+            </ResponseField>
+            <ResponseField name="price" type="object">
+              <Expandable title="properties">
+                <ResponseField name="symbol" type="string">
+                  Currency symbol (e.g., `"$"`).
+                </ResponseField>
+                <ResponseField name="value" type="number">
+                  Numeric price value.
+                </ResponseField>
+                <ResponseField name="currency" type="string">
+                  ISO 4217 currency code (e.g., `"USD"`).
+                </ResponseField>
+                <ResponseField name="display" type="string">
+                  Human-readable price string (e.g., `"$149.99"`).
+                </ResponseField>
+              </Expandable>
+            </ResponseField>
+            <ResponseField name="mainImageUrl" type="string">
+              URL of the product's primary image.
+            </ResponseField>
+            <ResponseField name="rating" type="number">
+              Average customer rating out of 5.
+            </ResponseField>
+            <ResponseField name="ratingsTotal" type="integer">
+              Total number of customer ratings.
+            </ResponseField>
+            <ResponseField name="isPrime" type="boolean">
+              `true` if the product is eligible for Amazon Prime shipping.
+            </ResponseField>
+            <ResponseField name="sponsored" type="boolean">
+              `true` if this result is a sponsored/advertising placement.
+            </ResponseField>
+            <ResponseField name="coupon" type="string | null">
+              Coupon label if a coupon is available (e.g., `"Save 10%"`), otherwise `null`.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+
+        <ResponseField name="pageInfo" type="object">
+          <Expandable title="properties">
+            <ResponseField name="currentPage" type="integer">
+              The current page number returned.
+            </ResponseField>
+            <ResponseField name="totalPages" type="integer">
+              Total number of pages available for this query.
+            </ResponseField>
+            <ResponseField name="totalResults" type="integer">
+              Estimated total number of matching products.
+            </ResponseField>
+            <ResponseField name="hasNextPage" type="boolean">
+              `true` if there is a subsequent page of results.
+            </ResponseField>
+            <ResponseField name="hasPrevPage" type="boolean">
+              `true` if there is a previous page of results.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example response
+
+```json
+{
+  "data": {
+    "amazonProductSearchResults": {
+      "availableRefinements": [
+        {
+          "name": "Brand",
+          "options": [
+            { "name": "Sony" },
+            { "name": "Bose" },
+            { "name": "JBL" }
+          ]
+        },
+        {
+          "name": "Customer Reviews",
+          "options": [
+            { "name": "4 Stars & Up" },
+            { "name": "3 Stars & Up" }
+          ]
+        }
+      ],
+      "productResults": {
+        "results": [
+          {
+            "title": "Sony WH-1000XM5 Wireless Industry Leading Noise Canceling Headphones",
+            "url": "https://www.amazon.com/dp/B09XS7JWHH",
+            "asin": "B09XS7JWHH",
+            "price": {
+              "symbol": "$",
+              "value": 199.99,
+              "currency": "USD",
+              "display": "$199.99"
+            },
+            "mainImageUrl": "https://m.media-amazon.com/images/I/61vCs5JMGgL._AC_SL1500_.jpg",
+            "rating": 4.4,
+            "ratingsTotal": 18423,
+            "isPrime": true,
+            "sponsored": false,
+            "coupon": null
+          },
+          {
+            "title": "Anker Soundcore Life Q30 Hybrid Active Noise Cancelling Headphones",
+            "url": "https://www.amazon.com/dp/B08HVTLT42",
+            "asin": "B08HVTLT42",
+            "price": {
+              "symbol": "$",
+              "value": 55.99,
+              "currency": "USD",
+              "display": "$55.99"
+            },
+            "mainImageUrl": "https://m.media-amazon.com/images/I/61TBi3vgHbL._AC_SL1500_.jpg",
+            "rating": 4.5,
+            "ratingsTotal": 64891,
+            "isPrime": true,
+            "sponsored": false,
+            "coupon": "Save 10%"
+          },
+          {
+            "title": "Jabra Evolve2 55 Wireless PC Headset — Noise Cancelling",
+            "url": "https://www.amazon.com/dp/B09B4JZQKL",
+            "asin": "B09B4JZQKL",
+            "price": {
+              "symbol": "$",
+              "value": 189.00,
+              "currency": "USD",
+              "display": "$189.00"
+            },
+            "mainImageUrl": "https://m.media-amazon.com/images/I/51XaL4WBTZL._AC_SL1500_.jpg",
+            "rating": 4.2,
+            "ratingsTotal": 3107,
+            "isPrime": true,
+            "sponsored": true,
+            "coupon": null
+          }
+        ],
+        "pageInfo": {
+          "currentPage": 1,
+          "totalPages": 20,
+          "totalResults": 4000,
+          "hasNextPage": true,
+          "hasPrevPage": false
+        }
+      }
+    }
+  }
+}
+```
+
+---
+
+## Error handling
+
+If your request is malformed or unauthorized, the API returns a standard error envelope. The `searchTerm` parameter is required — omitting it returns a `400` error.
+
+```json
+{
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Query parameter 'searchTerm' is required.",
+    "status": 400
+  }
+}
+```
+
+| Status | Meaning |
+|--------|---------|
+| `400` | Missing or invalid query parameters |
+| `401` | Missing or invalid `API-KEY` / Bearer token |
+| `429` | Rate limit exceeded |
+| `500` | Upstream Amazon error or internal server error |

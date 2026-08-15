@@ -1,0 +1,254 @@
+---
+title: "GET /api/amazon/product/offers — Third-Party Seller Offers"
+sidebarTitle: "Product Offers"
+description: "Fetch all third-party seller offers for an Amazon product. Returns pricing, delivery, seller rating, and buybox status with pagination support."
+---
+
+Retrieve all third-party seller offers listed for a given Amazon product. For each offer you get the price, delivery details, seller profile (name, rating, feedback count), and whether that offer currently holds the buybox. Results are paginated, allowing you to walk through large offer sets with the `page` parameter.
+
+## Request
+
+```http
+GET https://api.glade.dev/api/amazon/product/offers
+```
+
+### Query Parameters
+
+<ParamField query="domain" type="string" default="US">
+  The Amazon marketplace to query. Accepted values: `US` `UK` `CA` `DE` `FR` `IT` `ES` `AU` `IN` `MX` `BR` `JP` `PL`. Defaults to `US` when omitted.
+</ParamField>
+
+<ParamField query="asin" type="string">
+  The Amazon Standard Identification Number (e.g. `B09XS7JWHH`). Provide at least one of `asin`, `url`, or `gtin`.
+</ParamField>
+
+<ParamField query="url" type="string">
+  A full Amazon product URL. Provide at least one of `asin`, `url`, or `gtin`.
+</ParamField>
+
+<ParamField query="gtin" type="string">
+  A Global Trade Item Number (barcode). Provide at least one of `asin`, `url`, or `gtin`.
+</ParamField>
+
+<ParamField query="page" type="integer" default="1">
+  Page number of results to return. Minimum value is `1`.
+</ParamField>
+
+## Response
+
+Paginated offers are returned under `data.amazonProduct.offersPaginated`.
+
+<ResponseField name="data.amazonProduct.offersPaginated" type="object">
+  <Expandable title="offersPaginated fields" defaultOpen>
+    <ResponseField name="offers" type="object[]">
+      <Expandable title="offer item fields">
+        <ResponseField name="id" type="string">
+          Unique identifier for this offer.
+        </ResponseField>
+        <ResponseField name="price" type="object">
+          <Expandable title="price fields">
+            <ResponseField name="symbol" type="string">Currency symbol, e.g. `$`.</ResponseField>
+            <ResponseField name="value" type="number">Numeric price value.</ResponseField>
+            <ResponseField name="currency" type="string">ISO 4217 currency code.</ResponseField>
+            <ResponseField name="display" type="string">Human-readable price string.</ResponseField>
+          </Expandable>
+        </ResponseField>
+        <ResponseField name="minimumOrderQuantity" type="integer">
+          Minimum number of units required per order.
+        </ResponseField>
+        <ResponseField name="maximumOrderQuantity" type="integer">
+          Maximum number of units allowed per order.
+        </ResponseField>
+        <ResponseField name="conditionIsNew" type="boolean">
+          `true` if the item condition is new; `false` for used, refurbished, or open-box.
+        </ResponseField>
+        <ResponseField name="title" type="string">
+          Offer title or condition note provided by the seller.
+        </ResponseField>
+        <ResponseField name="delivery" type="object">
+          <Expandable title="delivery fields">
+            <ResponseField name="fulfilledByAmazon" type="boolean">
+              `true` if Amazon handles fulfilment (FBA).
+            </ResponseField>
+            <ResponseField name="shippedFromOutsideCountry" type="boolean">
+              `true` if the item ships from outside the destination country.
+            </ResponseField>
+            <ResponseField name="countdown" type="string">
+              Delivery urgency text, e.g. `Order within 3 hrs 20 mins`.
+            </ResponseField>
+            <ResponseField name="comments" type="string">
+              Additional delivery notes, e.g. `Arrives tomorrow`.
+            </ResponseField>
+            <ResponseField name="price" type="object">
+              <Expandable title="delivery price fields">
+                <ResponseField name="symbol" type="string">Currency symbol.</ResponseField>
+                <ResponseField name="value" type="number">Shipping cost value.</ResponseField>
+                <ResponseField name="currency" type="string">ISO 4217 currency code.</ResponseField>
+                <ResponseField name="display" type="string">Human-readable shipping cost, e.g. `FREE` or `$4.99`.</ResponseField>
+              </Expandable>
+            </ResponseField>
+            <ResponseField name="upsell" type="string">
+              An optional upsell message, e.g. `Join Prime for free delivery`.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+        <ResponseField name="seller" type="object">
+          <Expandable title="seller fields">
+            <ResponseField name="name" type="string">Seller display name.</ResponseField>
+            <ResponseField name="link" type="string">URL to the seller's Amazon storefront.</ResponseField>
+            <ResponseField name="rating" type="number">Seller rating on a 0–5 scale.</ResponseField>
+            <ResponseField name="ratingsPercentagePositive" type="number">
+              Percentage of positive ratings, e.g. `97`.
+            </ResponseField>
+            <ResponseField name="ratingsTotal" type="integer">Total lifetime ratings for the seller.</ResponseField>
+            <ResponseField name="id" type="string">Unique Amazon seller ID.</ResponseField>
+            <ResponseField name="imageUrl" type="string">URL to the seller's logo image.</ResponseField>
+          </Expandable>
+        </ResponseField>
+        <ResponseField name="isPrime" type="boolean">
+          `true` if this offer qualifies for Prime shipping.
+        </ResponseField>
+        <ResponseField name="buyboxWinner" type="boolean">
+          `true` if this offer currently holds the Amazon buybox.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="pageInfo" type="object">
+      <Expandable title="pageInfo fields">
+        <ResponseField name="currentPage" type="integer">The page number returned.</ResponseField>
+        <ResponseField name="totalPages" type="integer">Total number of pages available.</ResponseField>
+        <ResponseField name="totalResults" type="integer">Total number of offers across all pages.</ResponseField>
+        <ResponseField name="hasNextPage" type="boolean">`true` if a subsequent page exists.</ResponseField>
+        <ResponseField name="hasPrevPage" type="boolean">`true` if a previous page exists.</ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response
+
+```json
+{
+  "data": {
+    "amazonProduct": {
+      "offersPaginated": {
+        "offers": [
+          {
+            "id": "offer_ATVP_B09XS7JWHH",
+            "price": {
+              "symbol": "$",
+              "value": 279.99,
+              "currency": "USD",
+              "display": "$279.99"
+            },
+            "minimumOrderQuantity": 1,
+            "maximumOrderQuantity": 10,
+            "conditionIsNew": true,
+            "title": "New",
+            "delivery": {
+              "fulfilledByAmazon": true,
+              "shippedFromOutsideCountry": false,
+              "countdown": "Order within 2 hrs 45 mins",
+              "comments": "Arrives tomorrow",
+              "price": {
+                "symbol": "$",
+                "value": 0,
+                "currency": "USD",
+                "display": "FREE"
+              },
+              "upsell": null
+            },
+            "seller": {
+              "name": "Amazon.com",
+              "link": "https://www.amazon.com/s?me=ATVPDKIKX0DER",
+              "rating": 4.8,
+              "ratingsPercentagePositive": 98,
+              "ratingsTotal": 2489031,
+              "id": "ATVPDKIKX0DER",
+              "imageUrl": "https://images-na.ssl-images-amazon.com/images/G/01/marketplace/images/seller/amazon_logo.png"
+            },
+            "isPrime": true,
+            "buyboxWinner": true
+          },
+          {
+            "id": "offer_A1VC38T7YXB5HJ_B09XS7JWHH",
+            "price": {
+              "symbol": "$",
+              "value": 261.49,
+              "currency": "USD",
+              "display": "$261.49"
+            },
+            "minimumOrderQuantity": 1,
+            "maximumOrderQuantity": 5,
+            "conditionIsNew": true,
+            "title": "New — ships from authorized reseller",
+            "delivery": {
+              "fulfilledByAmazon": false,
+              "shippedFromOutsideCountry": false,
+              "countdown": null,
+              "comments": "Usually ships within 2–3 business days",
+              "price": {
+                "symbol": "$",
+                "value": 4.99,
+                "currency": "USD",
+                "display": "$4.99"
+              },
+              "upsell": "Join Prime for free delivery"
+            },
+            "seller": {
+              "name": "TechDeals Direct",
+              "link": "https://www.amazon.com/s?me=A1VC38T7YXB5HJ",
+              "rating": 4.6,
+              "ratingsPercentagePositive": 94,
+              "ratingsTotal": 8312,
+              "id": "A1VC38T7YXB5HJ",
+              "imageUrl": "https://images-na.ssl-images-amazon.com/images/G/01/marketplace/images/seller/placeholder.png"
+            },
+            "isPrime": false,
+            "buyboxWinner": false
+          }
+        ],
+        "pageInfo": {
+          "currentPage": 1,
+          "totalPages": 4,
+          "totalResults": 31,
+          "hasNextPage": true,
+          "hasPrevPage": false
+        }
+      }
+    }
+  }
+}
+```
+
+## Error Handling
+
+All errors follow a consistent envelope. The HTTP status code mirrors the `code` field inside the `errors` array.
+
+| Status | Meaning |
+|--------|---------|
+| `400`  | Bad request — a required parameter is missing or malformed. |
+| `401`  | Unauthorized — your API key is missing or invalid. |
+| `402`  | Payment required — your plan limit has been reached. |
+| `429`  | Too many requests — you have exceeded the rate limit for your plan. |
+| `502`  | Bad gateway — Amazon returned an unexpected response; retry with exponential back-off. |
+
+```json
+{
+  "success": false,
+  "errors": [
+    {
+      "code": 400,
+      "message": "Missing required parameter: asin, url, or gtin must be provided"
+    }
+  ]
+}
+```
+
+## curl Example
+
+```bash
+curl --request GET \
+  --url 'https://api.glade.dev/api/amazon/product/offers?asin=B09XS7JWHH&domain=US&page=1' \
+  --header 'API-KEY: YOUR_API_KEY'
+```

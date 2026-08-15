@@ -1,0 +1,165 @@
+---
+title: "GET /api/amazon/seller — Amazon Seller Profile"
+sidebarTitle: "Seller"
+description: "Retrieve an Amazon seller's profile including name, rating, product listings, and contact details by seller ID across any supported marketplace."
+---
+
+The `/api/amazon/seller` endpoint returns a seller's full profile from any supported Amazon marketplace — including their display name, logo, phone number, aggregate rating, and a paginated list of their active product listings. Use this endpoint to power seller directory pages, due-diligence tools, or competitive-analysis dashboards.
+
+## Request
+
+<br />
+
+**`GET https://api.glade.dev/api/amazon/seller`**
+
+<ParamField query="sellerId" type="string" required>
+  The Amazon seller identifier for the seller you want to look up. You can find this value in a seller's Amazon profile URL — it appears as the `seller` query parameter, e.g. `amazon.com/sp?seller=A2L77EE7U53NWQ`.
+</ParamField>
+
+<ParamField query="domain" type="string" default="US">
+  The Amazon marketplace to query. Accepted values: `US`, `UK`, `CA`, `DE`, `FR`, `IT`, `ES`, `AU`, `IN`, `MX`, `BR`, `JP`, `PL`. Defaults to `US` when omitted.
+</ParamField>
+
+<ParamField query="page" type="integer">
+  The page number of the seller's product listings to return. Must be `1` or greater. Omit to retrieve the first page.
+</ParamField>
+
+## Response
+
+A successful response returns `data.amazonSeller`.
+
+<ResponseField name="data.amazonSeller" type="object">
+  <Expandable title="amazonSeller">
+    <ResponseField name="sellerId" type="string">
+      The unique Amazon seller identifier.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The seller's display name as shown on their Amazon storefront.
+    </ResponseField>
+    <ResponseField name="logoUrl" type="string">
+      URL of the seller's logo image, if available.
+    </ResponseField>
+    <ResponseField name="phone" type="string">
+      The seller's listed contact phone number, if provided.
+    </ResponseField>
+    <ResponseField name="rating" type="number">
+      The seller's aggregate feedback rating, on a scale of 1–5.
+    </ResponseField>
+    <ResponseField name="about" type="string">
+      The seller's self-written about/description text from their storefront.
+    </ResponseField>
+    <ResponseField name="productResults" type="object">
+      <Expandable title="productResults">
+        <ResponseField name="results" type="array">
+          <Expandable title="results[]">
+            <ResponseField name="title" type="string">Product title.</ResponseField>
+            <ResponseField name="url" type="string">Canonical Amazon product URL.</ResponseField>
+            <ResponseField name="asin" type="string">Amazon Standard Identification Number.</ResponseField>
+            <ResponseField name="price" type="string">Displayed price, including currency symbol.</ResponseField>
+            <ResponseField name="mainImageUrl" type="string">URL of the primary product image.</ResponseField>
+            <ResponseField name="rating" type="number">Average customer rating (1–5).</ResponseField>
+            <ResponseField name="ratingsTotal" type="integer">Total number of customer ratings.</ResponseField>
+            <ResponseField name="isPrime" type="boolean">Whether the product is eligible for Amazon Prime.</ResponseField>
+            <ResponseField name="sponsored" type="boolean">Whether the listing is a sponsored placement.</ResponseField>
+            <ResponseField name="coupon" type="string">Active coupon text, e.g. `"Save 10%"`, or `null` if none.</ResponseField>
+          </Expandable>
+        </ResponseField>
+        <ResponseField name="pageInfo" type="object">
+          <Expandable title="pageInfo">
+            <ResponseField name="currentPage" type="integer">The page number returned.</ResponseField>
+            <ResponseField name="totalPages" type="integer">Total number of listing pages available.</ResponseField>
+            <ResponseField name="totalResults" type="integer">Total product listing count for this seller.</ResponseField>
+            <ResponseField name="hasNextPage" type="boolean">Whether a subsequent page exists.</ResponseField>
+            <ResponseField name="hasPrevPage" type="boolean">Whether a previous page exists.</ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example response
+
+```json
+{
+  "success": true,
+  "data": {
+    "amazonSeller": {
+      "sellerId": "A2L77EE7U53NWQ",
+      "name": "Anker Direct",
+      "logoUrl": "https://images-na.ssl-images-amazon.com/images/S/aplus-seller-content-images-us-east-1/A2L77EE7U53NWQ/logo.png",
+      "phone": "+1-800-988-7973",
+      "rating": 4.7,
+      "about": "Anker is one of the world's leading charging technology brands. We make products that keep your devices powered wherever you go.",
+      "productResults": {
+        "results": [
+          {
+            "title": "Anker 65W USB-C Charger, 3-Port Fast Charger",
+            "url": "https://www.amazon.com/dp/B09B4XBL3W",
+            "asin": "B09B4XBL3W",
+            "price": "$35.99",
+            "mainImageUrl": "https://m.media-amazon.com/images/I/71abc123XYZ.jpg",
+            "rating": 4.8,
+            "ratingsTotal": 12453,
+            "isPrime": true,
+            "sponsored": false,
+            "coupon": "Save 5%"
+          },
+          {
+            "title": "Anker PowerCore 10000 Portable Charger",
+            "url": "https://www.amazon.com/dp/B0194WDVHI",
+            "asin": "B0194WDVHI",
+            "price": "$21.99",
+            "mainImageUrl": "https://m.media-amazon.com/images/I/61def456ABC.jpg",
+            "rating": 4.7,
+            "ratingsTotal": 98231,
+            "isPrime": true,
+            "sponsored": false,
+            "coupon": null
+          }
+        ],
+        "pageInfo": {
+          "currentPage": 1,
+          "totalPages": 24,
+          "totalResults": 473,
+          "hasNextPage": true,
+          "hasPrevPage": false
+        }
+      }
+    }
+  }
+}
+```
+
+## Curl example
+
+```bash
+curl --request GET \
+  --url "https://api.glade.dev/api/amazon/seller?sellerId=A2L77EE7U53NWQ&domain=US&page=1" \
+  --header "API-KEY: <your-api-key>"
+```
+
+## Error handling
+
+If a required parameter is missing or invalid, the API returns a non-2xx status code with a JSON error body. Always check the `success` field before reading `data`.
+
+| HTTP Status | Meaning |
+|---|---|
+| `400` | Bad request — a required parameter is missing or has an invalid value. |
+| `401` | Unauthorized — your API key is missing or invalid. |
+| `404` | Not found — no seller was found for the given `sellerId` and `domain`. |
+| `429` | Too many requests — you have exceeded your plan's rate limit. |
+
+### Example error response
+
+```json
+{
+  "success": false,
+  "errors": [
+    {
+      "code": 400,
+      "message": "Missing required parameter: sellerId"
+    }
+  ]
+}
+```

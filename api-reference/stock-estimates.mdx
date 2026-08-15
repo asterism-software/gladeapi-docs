@@ -1,0 +1,139 @@
+---
+title: "GET /api/amazon/product/stock — Amazon Stock Estimates"
+sidebarTitle: "Stock Estimates"
+description: "Check current Amazon stock levels and availability for a product by ASIN, GTIN, or URL. Returns inStock status, stock level, and availability message."
+---
+
+Check the current stock availability of any Amazon product. The response tells you whether the item is in stock, the estimated number of units remaining, and the human-readable availability message shown to shoppers — useful for inventory monitoring, restock alerting, and competitor shelf-share analysis.
+
+## Request
+
+```http
+GET https://api.glade.dev/api/amazon/product/stock
+```
+
+### Query Parameters
+
+<ParamField query="domain" type="string" default="US">
+  The Amazon marketplace to query. Accepted values: `US` `UK` `CA` `DE` `FR` `IT` `ES` `AU` `IN` `MX` `BR` `JP` `PL`. Defaults to `US` when omitted.
+</ParamField>
+
+<ParamField query="asin" type="string">
+  The Amazon Standard Identification Number (e.g. `B09XS7JWHH`). Provide at least one of `asin`, `url`, or `gtin`.
+</ParamField>
+
+<ParamField query="url" type="string">
+  A full Amazon product URL. Provide at least one of `asin`, `url`, or `gtin`.
+</ParamField>
+
+<ParamField query="gtin" type="string">
+  A Global Trade Item Number (barcode). Provide at least one of `asin`, `url`, or `gtin`.
+</ParamField>
+
+## Response
+
+Stock information is returned under `data.amazonProduct.stockEstimate`.
+
+<ResponseField name="data.amazonProduct.stockEstimate" type="object">
+  <Expandable title="stockEstimate fields" defaultOpen>
+    <ResponseField name="offerId" type="string">
+      The identifier of the offer this stock estimate applies to (typically the buybox winner).
+    </ResponseField>
+    <ResponseField name="inStock" type="boolean" required>
+      `true` if the product is currently available for purchase.
+    </ResponseField>
+    <ResponseField name="stockLevel" type="integer">
+      Estimated number of units remaining. A value of `0` indicates the item is out of stock. May be `null` when Amazon does not expose an exact count (e.g. for high-inventory items).
+    </ResponseField>
+    <ResponseField name="availabilityMessage" type="string">
+      The availability text displayed to customers on the product page. Common values include:
+      - `"In Stock"`
+      - `"Only 3 left in stock – order soon"`
+      - `"Usually ships within 2–3 days"`
+      - `"Currently unavailable"`
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response
+
+```json
+{
+  "data": {
+    "amazonProduct": {
+      "stockEstimate": {
+        "offerId": "offer_ATVP_B09XS7JWHH",
+        "inStock": true,
+        "stockLevel": 47,
+        "availabilityMessage": "In Stock"
+      }
+    }
+  }
+}
+```
+
+#### Low-stock example
+
+```json
+{
+  "data": {
+    "amazonProduct": {
+      "stockEstimate": {
+        "offerId": "offer_ATVP_B08N5WRW1X",
+        "inStock": true,
+        "stockLevel": 3,
+        "availabilityMessage": "Only 3 left in stock – order soon"
+      }
+    }
+  }
+}
+```
+
+#### Out-of-stock example
+
+```json
+{
+  "data": {
+    "amazonProduct": {
+      "stockEstimate": {
+        "offerId": "offer_ATVP_B07XJ8C8F5",
+        "inStock": false,
+        "stockLevel": 0,
+        "availabilityMessage": "Currently unavailable"
+      }
+    }
+  }
+}
+```
+
+## Error Handling
+
+All errors follow a consistent envelope. The HTTP status code mirrors the `code` field inside the `errors` array.
+
+| Status | Meaning |
+|--------|---------|
+| `400`  | Bad request — a required parameter is missing or malformed. |
+| `401`  | Unauthorized — your API key is missing or invalid. |
+| `402`  | Payment required — your plan limit has been reached. |
+| `429`  | Too many requests — you have exceeded the rate limit for your plan. |
+| `502`  | Bad gateway — Amazon returned an unexpected response; retry with exponential back-off. |
+
+```json
+{
+  "success": false,
+  "errors": [
+    {
+      "code": 400,
+      "message": "Missing required parameter: asin, url, or gtin must be provided"
+    }
+  ]
+}
+```
+
+## curl Example
+
+```bash
+curl --request GET \
+  --url 'https://api.glade.dev/api/amazon/product/stock?asin=B09XS7JWHH&domain=US' \
+  --header 'API-KEY: YOUR_API_KEY'
+```

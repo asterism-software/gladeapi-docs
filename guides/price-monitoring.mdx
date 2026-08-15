@@ -1,0 +1,153 @@
+---
+title: "Build a Price Monitoring Tool with Glade API"
+sidebarTitle: "Price Monitoring"
+description: "Track Amazon product prices across multiple marketplaces using Glade API. Learn how to poll product data, detect price changes, and alert your users."
+---
+
+Glade API makes it straightforward to track Amazon prices in real-time. This guide shows you how to fetch current prices, compare them over time, and build alerting logic — all with normalized price objects that work consistently across all 13 supported marketplaces.
+
+## Fetching a product price
+
+The `GET /api/amazon/product` endpoint returns a `price` object for every product. The object contains four fields: `symbol`, `value`, `currency`, and `display`. The `value` field is always a numeric float, making it safe to use directly in comparisons without any string parsing.
+
+```bash
+curl "https://api.glade.dev/api/amazon/product?asin=B0D1XD1ZV3&domain=US" \
+  -H "API-KEY: glade_live_lookup_your_key"
+```
+
+The price data lives inside the `data.amazonProduct` object in the response:
+
+```json
+{
+  "data": {
+    "amazonProduct": {
+      "asin": "B0D1XD1ZV3",
+      "title": "Example Product",
+      "price": {
+        "symbol": "$",
+        "value": 29.99,
+        "currency": "USD",
+        "display": "$29.99"
+      },
+      "isInStock": true,
+      "isPrime": true
+    }
+  }
+}
+```
+
+Use `price.display` when you want to render the price to users. Use `price.value` when you want to store or compare it programmatically.
+
+## Monitoring across marketplaces
+
+Prices vary significantly between Amazon's regional stores. The same ASIN can carry a different price on Amazon.co.uk versus Amazon.de due to local currency rates, regional competition, Prime availability, and import costs. Glade API normalizes all price objects to the same shape regardless of marketplace, so your comparison logic stays the same everywhere.
+
+The following JavaScript example fetches the same ASIN from the US, UK, and DE marketplaces in parallel using `Promise.all`, then returns a unified array you can render or persist:
+
+```javascript
+const GLADE_KEY = process.env.GLADE_API_KEY;
+const ASIN = 'B0D1XD1ZV3';
+const DOMAINS = ['US', 'UK', 'DE'];
+
+async function getPrices(asin, domains) {
+  const results = await Promise.all(
+    domains.map(async (domain) => {
+      const res = await fetch(
+        `https://api.glade.dev/api/amazon/product?asin=${asin}&domain=${domain}`,
+        { headers: { 'API-KEY': GLADE_KEY } }
+      );
+      const { data } = await res.json();
+      return { domain, price: data.amazonProduct.price };
+    })
+  );
+  return results;
+}
+
+const prices = await getPrices(ASIN, DOMAINS);
+console.log(prices);
+```
+
+Each parallel request counts as one unit, so fetching across three domains costs three units total. If you poll frequently, consider staggering requests or caching results with a short TTL.
+
+## Detecting price drops
+
+To detect a price drop, you need to compare the current price against a previously stored value. The pattern is simple: persist the last known `price.value` in a database or cache after each successful fetch, then compare it to the next fetch's result.
+
+```python
+import os, requests
+
+GLADE_KEY = os.environ['GLADE_API_KEY']
+
+def get_price(asin: str, domain: str = 'US') -> float | None:
+    resp = requests.get(
+        'https://api.glade.dev/api/amazon/product',
+        params={'asin': asin, 'domain': domain},
+        headers={'API-KEY': GLADE_KEY},
+    )
+    resp.raise_for_status()
+    product = resp.json()['data']['amazonProduct']
+    price = product.get('price')
+    return price['value'] if price else None
+
+def check_price_drop(asin: str, previous_price: float) -> bool:
+    current = get_price(asin)
+    if current is None:
+        return False
+    return current < previous_price
+```
+
+`get_price` returns `None` when the product has no listed price (for example, when it is temporarily out of stock and price data is unavailable). Always guard against `None` before storing or comparing values.
+
+A recommended polling pattern:
+
+<Steps>
+  <Step title="Fetch and store the baseline price">
+    On first run, call `get_price` and write the result to your database as the baseline.
+  </Step>
+  <Step title="Schedule a recurring poll">
+    Use a cron job or task queue to call `get_price` at your desired interval (for example, every hour).
+  </Step>
+  <Step title="Compare and alert">
+    Call `check_price_drop` with the stored baseline. If it returns `True`, fire your alert — email, push notification, webhook, or otherwise.
+  </Step>
+  <Step title="Update the stored price">
+    After alerting (or even if no drop occurred), overwrite the stored baseline with the current price so future comparisons reflect the latest value.
+  </Step>
+</Steps>
+
+## Tracking third-party offers
+
+The buy-box price is not always the cheapest option. Third-party sellers often list the same ASIN at a lower price, sometimes with free shipping. Use `GET /api/amazon/product/offers` to retrieve all active seller listings for an ASIN.
+
+```bash
+curl "https://api.glade.dev/api/amazon/product/offers?asin=B0D1XD1ZV3&domain=US" \
+  -H "API-KEY: glade_live_lookup_your_key"
+```
+
+Each offer in the response includes:
+
+| Field | Description |
+|---|---|
+| `conditionIsNew` | `true` if the item is listed as new |
+| `delivery.fulfilledByAmazon` | `true` if the offer ships via Amazon (FBA) |
+| `buyboxWinner` | `true` if this offer currently holds the buy box |
+| `price` | The offer price object with `value`, `currency`, `display` |
+
+To find the lowest total cost, iterate offers and sum `price.value` with any delivery cost. Filtering to `conditionIsNew: true` and `delivery.fulfilledByAmazon: true` narrows results to the most reliable FBA-fulfilled new listings.
+
+## Checking coupons and deals
+
+Amazon regularly applies clip-and-save coupons and time-limited deals to products. Glade API surfaces both.
+
+**Coupons:** Products with an active coupon include a `coupon` field containing a human-readable label string, for example `"Save $5.00"` or `"10% off"`. Check this field after fetching product details to include savings in your price comparisons.
+
+**Deals:** Use `GET /api/amazon/deals` to browse currently active deals across categories. The endpoint returns lightning deals, best deals, and other promotional pricing — useful for building a deal-alert feature or scanning a category for temporarily discounted products.
+
+```bash
+curl "https://api.glade.dev/api/amazon/deals?domain=US&categoryId=172282" \
+  -H "API-KEY: glade_live_lookup_your_key"
+```
+
+<Tip>
+  When calculating the effective price for a user, combine `price.value` with any active coupon savings. A product priced at $29.99 with a "Save $5.00" coupon has an effective cost of $24.99 — which may be lower than a competing offer that lacks a coupon.
+</Tip>

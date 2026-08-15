@@ -1,20 +1,78 @@
 ---
-title: "Introduction"
-description: "Welcome to your project"
+title: "Glade API: Amazon Data for Every Build"
+sidebarTitle: "Home"
+description: "Glade API gives you clean, normalized Amazon data through REST, GraphQL, and MCP — covering products, search, offers, reviews, sellers, deals, and estimates across 13 marketplaces."
 ---
 
-Write a short description of your product here. What it does, who it's for, and what they can accomplish with it.
+Glade API is a Canopy-compatible Amazon data platform that exposes product details, search results, seller profiles, customer reviews, third-party offers, deals, and sales/stock estimates through a single consistent contract. Whether you prefer REST, GraphQL, or the Model Context Protocol for AI agents, every operation shares the same quota, caching semantics, and response shape.
 
-<Tip>
-  Ready to make this your own? Start by editing this page. Update your `docs.json` file to customize your site. Then fill out the [Quickstart](/quickstart) page.
-</Tip>
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="bolt" href="/quickstart">
+    Make your first API call in under five minutes
+  </Card>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Get your API key and learn how to authenticate requests
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/product">
+    Full reference for all 17 endpoints across products, search, and sellers
+  </Card>
+  <Card title="Guides" icon="map" href="/guides/price-monitoring">
+    Step-by-step guides for price monitoring, product research, and AI agents
+  </Card>
+</CardGroup>
 
-<Card title="Quickstart" icon="rocket" href="/quickstart">
-  This card links to the quickstart page in your project.
-</Card>
-<Card title="Components" icon="puzzle-piece" href="https://mintlify.com/docs/components">
-  Add cards, callouts, steps, tabs, and more to design and structure your pages.
-</Card>
-<Card title="Settings" icon="gear" href="https://mintlify.com/docs/organize/settings">
-  Set your site name, branding, and navigation in the `docs.json` file.
-</Card>
+## How Glade API Works
+
+Every endpoint accepts a marketplace `domain` parameter and one or more product identifiers (ASIN, GTIN, or URL). Responses are normalized objects — no scraping logic, no raw HTML, no per-marketplace parsing required in your code.
+
+<Steps>
+  <Step title="Create an API key">
+    Sign up at [gladeapi.com](https://gladeapi.com/auth/login?next=/dashboard) and generate a reveal-once API key from your dashboard.
+  </Step>
+  <Step title="Authenticate your request">
+    Pass your key in the `API-KEY` header (or as a Bearer token) on every call.
+  </Step>
+  <Step title="Choose your interface">
+    Use REST (`/api/amazon/*`), GraphQL (`/api/graphql`), or MCP (`/api/mcp`) — all interfaces share the same operations and quota.
+  </Step>
+  <Step title="Pick a marketplace">
+    Add `?domain=US` (or UK, CA, DE, FR, IT, ES, AU, IN, MX, BR, JP, PL) to target any of the 13 supported Amazon marketplaces.
+  </Step>
+</Steps>
+
+## What You Can Fetch
+
+<CardGroup cols={3}>
+  <Card title="Products" icon="box" href="/api-reference/product">
+    Titles, prices, images, ratings, feature bullets, and specs
+  </Card>
+  <Card title="Search" icon="magnifying-glass" href="/api-reference/search">
+    Keyword search with filters, sorting, and pagination
+  </Card>
+  <Card title="Reviews" icon="star" href="/api-reference/product-reviews">
+    Paginated reviews with rating and verified-purchase filters
+  </Card>
+  <Card title="Offers" icon="tag" href="/api-reference/product-offers">
+    Third-party seller offers with delivery and condition details
+  </Card>
+  <Card title="Deals" icon="fire" href="/api-reference/deals">
+    Lightning deals and limited-time offers with discount metadata
+  </Card>
+  <Card title="Estimates" icon="chart-bar" href="/api-reference/sales-estimates">
+    Weekly, monthly, and annual sales estimates plus stock levels
+  </Card>
+</CardGroup>
+
+## Interfaces
+
+<CardGroup cols={3}>
+  <Card title="REST" icon="globe" href="/concepts/interfaces">
+    Standard HTTP GET endpoints under `/api/amazon/*`
+  </Card>
+  <Card title="GraphQL" icon="circle-nodes" href="/concepts/interfaces">
+    Query exactly the fields you need via `/api/graphql`
+  </Card>
+  <Card title="MCP" icon="robot" href="/concepts/interfaces">
+    Expose all 17 operations as typed tools for AI agents
+  </Card>
+</CardGroup>

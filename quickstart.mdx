@@ -1,47 +1,84 @@
 ---
-title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+title: "Get Started with Glade API in Minutes"
+sidebarTitle: "Quickstart"
+description: "Learn how to create an API key, authenticate, and make your first Glade API call to fetch Amazon product data in under five minutes."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
-
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
-
-## Prerequisites
-
-Before you begin, you must have:
-
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
-
-## Get started
+Glade API lets you fetch live Amazon data with a single HTTP request. This guide walks you through creating an account, generating your API key, and making your first call — you will have real product data in your terminal in under five minutes.
 
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
+  <Step title="Create your account">
+    Go to the [Glade API dashboard](https://gladeapi.com/auth/login?next=/dashboard) and sign up for a free account. No credit card is required — every new account includes 100 free units.
 
-    ```bash
-    npm install your-package
+    Once you are logged in, navigate to the **API Keys** section and click **New key**. Your key is displayed exactly once at creation time, so copy it immediately and store it somewhere safe (for example, a `.env` file or your team's secrets manager).
+
+    Your key will look like this:
+
+    ```
+    glade_live_lookup_xxxxxxxxxxxxxxxxxxxx
     ```
   </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
+  <Step title="Make your first request">
+    Replace `glade_live_lookup_your_key` with your actual API key and run the following command in your terminal:
 
     ```bash
-    your-cli init
+    curl "https://api.glade.dev/api/amazon/product?asin=B0D1XD1ZV3&domain=US" \
+      -H "API-KEY: glade_live_lookup_your_key"
     ```
+
+    This fetches live product data for the ASIN `B0D1XD1ZV3` from the US marketplace. The `domain` parameter controls which of the 13 supported Amazon marketplaces Glade API queries.
   </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
+  <Step title="Read the response">
+    A successful response returns a JSON object with a `data` key containing the normalized product record:
+
+    ```json
+    {
+      "data": {
+        "amazonProduct": {
+          "asin": "B0D1XD1ZV3",
+          "title": "Example Product Title",
+          "brand": "ExampleBrand",
+          "price": {
+            "value": 34.99,
+            "currency": "USD",
+            "display": "$34.99"
+          },
+          "rating": 4.5,
+          "ratingsTotal": 1248,
+          "isInStock": true,
+          "isPrime": true
+        }
+      }
+    }
+    ```
+
+    Every price object includes a raw numeric `value`, an ISO 4217 `currency` code, and a locale-formatted `display` string. The `isInStock` and `isPrime` flags reflect live availability at the time of the request.
+  </Step>
+  <Step title="Try another marketplace">
+    Change the `domain` parameter to target a different Amazon marketplace. For example, to fetch the same ASIN's UK listing with GBP pricing:
 
     ```bash
-    your-cli start
+    curl "https://api.glade.dev/api/amazon/product?asin=B0D1XD1ZV3&domain=UK" \
+      -H "API-KEY: glade_live_lookup_your_key"
     ```
+
+    You can substitute any of the 13 supported domain codes — `US`, `UK`, `CA`, `DE`, `FR`, `IT`, `ES`, `AU`, `IN`, `MX`, `BR`, `JP`, or `PL` — without changing anything else in your request. Glade API resolves the correct Amazon host, currency, and locale for each market automatically.
   </Step>
 </Steps>
 
-<Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
+## Next steps
 
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
-</Tip>
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Learn how to pass your API key securely, understand all supported header formats, and handle authentication errors.
+  </Card>
+  <Card title="Interfaces: REST, GraphQL & MCP" icon="plug" href="/concepts/interfaces">
+    Explore the three interfaces in depth and choose the one that fits your application architecture.
+  </Card>
+  <Card title="API Reference: Product" icon="box" href="/api-reference/product">
+    See every parameter, field, and response schema for the product endpoint.
+  </Card>
+  <Card title="Guide: Price Monitoring" icon="chart-line" href="/guides/price-monitoring">
+    Build a multi-marketplace price monitor using Glade API, polling, and webhook notifications.
+  </Card>
+</CardGroup>

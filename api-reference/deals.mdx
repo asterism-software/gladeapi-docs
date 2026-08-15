@@ -1,0 +1,291 @@
+---
+title: "GET /api/amazon/deals — Amazon Deals Feed"
+sidebarTitle: "Deals"
+description: "Fetch Amazon deals including lightning deals and limited-time offers. Returns discount percentages, deal type, timing, and current vs. list prices."
+---
+
+The deals endpoint surfaces active Amazon deals — including lightning deals, limited-time offers, and promotional discounts — across all supported marketplaces. Each deal result includes the discount percentage, deal type, current and list prices, and timing metadata so you can display countdowns or highlight urgency in your UI.
+
+## Request
+
+<ParamField query="domain" type="string" default="US">
+  The Amazon marketplace to query. Supported values: `US`, `UK`, `CA`, `DE`, `FR`, `IT`, `ES`, `AU`, `IN`, `MX`, `BR`, `JP`, `PL`. Defaults to `US`.
+</ParamField>
+
+<ParamField query="categoryIds" type="string">
+  Comma-separated list of Amazon category IDs to filter deals by (e.g., `"172282,16225009011"`). Use the [bestseller-categories](/api-reference/bestseller-categories) endpoint to look up valid category IDs.
+</ParamField>
+
+<ParamField query="page" type="integer">
+  Page number to retrieve. Combine with `pageInfo.totalPages` in the response to paginate through all available deals.
+</ParamField>
+
+<ParamField query="limit" type="integer">
+  Number of deal results to return per page.
+</ParamField>
+
+### Example request
+
+```bash
+curl "https://api.glade.dev/api/amazon/deals?domain=US&page=1" \
+  -H "API-KEY: YOUR_API_KEY"
+```
+
+---
+
+## Response
+
+A successful response returns `data.amazonDeals.productResults` containing an array of deal products and pagination metadata.
+
+<ResponseField name="data.amazonDeals" type="object">
+  <Expandable title="properties" defaultOpen>
+    <ResponseField name="productResults" type="object">
+      <Expandable title="properties">
+        <ResponseField name="results" type="array">
+          Array of deal product objects.
+
+          <Expandable title="results[]">
+            <ResponseField name="title" type="string">
+              Full product title as shown on Amazon.
+            </ResponseField>
+            <ResponseField name="url" type="string">
+              Canonical Amazon product page URL.
+            </ResponseField>
+            <ResponseField name="asin" type="string">
+              Amazon Standard Identification Number for the product.
+            </ResponseField>
+            <ResponseField name="price" type="object">
+              Standard product price object.
+              <Expandable title="properties">
+                <ResponseField name="symbol" type="string">Currency symbol (e.g., `"$"`).</ResponseField>
+                <ResponseField name="value" type="number">Numeric price value.</ResponseField>
+                <ResponseField name="currency" type="string">ISO 4217 currency code (e.g., `"USD"`).</ResponseField>
+                <ResponseField name="display" type="string">Human-readable price string (e.g., `"$89.99"`).</ResponseField>
+              </Expandable>
+            </ResponseField>
+            <ResponseField name="mainImageUrl" type="string">
+              URL of the product's primary image.
+            </ResponseField>
+            <ResponseField name="rating" type="number">
+              Average customer rating out of 5.
+            </ResponseField>
+            <ResponseField name="ratingsTotal" type="integer">
+              Total number of customer ratings.
+            </ResponseField>
+            <ResponseField name="recommendedRetailPrice" type="object | null">
+              Manufacturer's suggested retail price, if available.
+              <Expandable title="properties">
+                <ResponseField name="symbol" type="string">Currency symbol.</ResponseField>
+                <ResponseField name="value" type="number">Numeric RRP value.</ResponseField>
+                <ResponseField name="currency" type="string">ISO 4217 currency code.</ResponseField>
+                <ResponseField name="display" type="string">Human-readable RRP string.</ResponseField>
+              </Expandable>
+            </ResponseField>
+            <ResponseField name="dealId" type="string">
+              Unique identifier for this deal, assigned by Amazon.
+            </ResponseField>
+            <ResponseField name="dealUrl" type="string">
+              Direct URL to the deal page on Amazon.
+            </ResponseField>
+            <ResponseField name="dealPrice" type="object">
+              The price at which this deal is offered.
+              <Expandable title="properties">
+                <ResponseField name="symbol" type="string">Currency symbol.</ResponseField>
+                <ResponseField name="value" type="number">Deal price value.</ResponseField>
+                <ResponseField name="currency" type="string">ISO 4217 currency code.</ResponseField>
+                <ResponseField name="display" type="string">Human-readable deal price (e.g., `"$89.99"`).</ResponseField>
+              </Expandable>
+            </ResponseField>
+            <ResponseField name="dealCurrentPrice" type="object">
+              The current active price of the deal (may differ from `dealPrice` if claimed partially).
+              <Expandable title="properties">
+                <ResponseField name="symbol" type="string">Currency symbol.</ResponseField>
+                <ResponseField name="value" type="number">Current price value.</ResponseField>
+                <ResponseField name="currency" type="string">ISO 4217 currency code.</ResponseField>
+                <ResponseField name="display" type="string">Human-readable current price.</ResponseField>
+              </Expandable>
+            </ResponseField>
+            <ResponseField name="dealListPrice" type="object">
+              The original list price before the deal discount.
+              <Expandable title="properties">
+                <ResponseField name="symbol" type="string">Currency symbol.</ResponseField>
+                <ResponseField name="value" type="number">List price value.</ResponseField>
+                <ResponseField name="currency" type="string">ISO 4217 currency code.</ResponseField>
+                <ResponseField name="display" type="string">Human-readable list price.</ResponseField>
+              </Expandable>
+            </ResponseField>
+            <ResponseField name="dealPercentOff" type="number">
+              Percentage discount applied by this deal (e.g., `35` means 35% off).
+            </ResponseField>
+            <ResponseField name="dealType" type="string">
+              Type of deal (e.g., `"LIGHTNING_DEAL"`, `"BEST_DEAL"`, `"COUPON"`).
+            </ResponseField>
+            <ResponseField name="dealIsLightningDeal" type="boolean">
+              `true` if this is a time-limited lightning deal.
+            </ResponseField>
+            <ResponseField name="dealBadge" type="string | null">
+              Promotional badge label if present (e.g., `"Deal of the Day"`), otherwise `null`.
+            </ResponseField>
+            <ResponseField name="dealStartTime" type="string | null">
+              ISO 8601 timestamp for when the deal starts. Present for lightning deals.
+            </ResponseField>
+            <ResponseField name="dealEndTime" type="string | null">
+              ISO 8601 timestamp for when the deal ends. Present for lightning deals.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+
+        <ResponseField name="pageInfo" type="object">
+          <Expandable title="properties">
+            <ResponseField name="currentPage" type="integer">The current page number returned.</ResponseField>
+            <ResponseField name="totalPages" type="integer">Total number of pages available.</ResponseField>
+            <ResponseField name="totalResults" type="integer">Total number of active deals matching the query.</ResponseField>
+            <ResponseField name="hasNextPage" type="boolean">`true` if there is a subsequent page of results.</ResponseField>
+            <ResponseField name="hasPrevPage" type="boolean">`true` if there is a previous page of results.</ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Note>
+  Lightning deals have `dealIsLightningDeal: true` and include `dealStartTime` and `dealEndTime` in ISO 8601 format. Use these fields to display a live countdown timer or indicate urgency to your users.
+</Note>
+
+### Example response
+
+```json
+{
+  "data": {
+    "amazonDeals": {
+      "productResults": {
+        "results": [
+          {
+            "title": "Beats Studio Pro Wireless Headphones — Personalized Spatial Audio",
+            "url": "https://www.amazon.com/dp/B0C8FVFMQ6",
+            "asin": "B0C8FVFMQ6",
+            "price": {
+              "symbol": "$",
+              "value": 229.95,
+              "currency": "USD",
+              "display": "$229.95"
+            },
+            "mainImageUrl": "https://m.media-amazon.com/images/I/71y3oKTR-zL._AC_SL1500_.jpg",
+            "rating": 4.3,
+            "ratingsTotal": 5812,
+            "recommendedRetailPrice": {
+              "symbol": "$",
+              "value": 349.95,
+              "currency": "USD",
+              "display": "$349.95"
+            },
+            "dealId": "d3f9a2b1-0045-4e88-bc12-f4a9e3c71200",
+            "dealUrl": "https://www.amazon.com/deals/d3f9a2b1-0045-4e88-bc12-f4a9e3c71200",
+            "dealPrice": {
+              "symbol": "$",
+              "value": 229.95,
+              "currency": "USD",
+              "display": "$229.95"
+            },
+            "dealCurrentPrice": {
+              "symbol": "$",
+              "value": 229.95,
+              "currency": "USD",
+              "display": "$229.95"
+            },
+            "dealListPrice": {
+              "symbol": "$",
+              "value": 349.95,
+              "currency": "USD",
+              "display": "$349.95"
+            },
+            "dealPercentOff": 34,
+            "dealType": "BEST_DEAL",
+            "dealIsLightningDeal": false,
+            "dealBadge": null,
+            "dealStartTime": null,
+            "dealEndTime": null
+          },
+          {
+            "title": "Echo Dot (5th Gen) Smart Speaker with Alexa — Charcoal",
+            "url": "https://www.amazon.com/dp/B09B8V1LZ3",
+            "asin": "B09B8V1LZ3",
+            "price": {
+              "symbol": "$",
+              "value": 22.99,
+              "currency": "USD",
+              "display": "$22.99"
+            },
+            "mainImageUrl": "https://m.media-amazon.com/images/I/71xoR4XBDWL._AC_SL1000_.jpg",
+            "rating": 4.7,
+            "ratingsTotal": 231045,
+            "recommendedRetailPrice": {
+              "symbol": "$",
+              "value": 49.99,
+              "currency": "USD",
+              "display": "$49.99"
+            },
+            "dealId": "a1b2c3d4-5678-90ef-ghij-klmnopqrstuv",
+            "dealUrl": "https://www.amazon.com/deals/a1b2c3d4-5678-90ef-ghij-klmnopqrstuv",
+            "dealPrice": {
+              "symbol": "$",
+              "value": 22.99,
+              "currency": "USD",
+              "display": "$22.99"
+            },
+            "dealCurrentPrice": {
+              "symbol": "$",
+              "value": 22.99,
+              "currency": "USD",
+              "display": "$22.99"
+            },
+            "dealListPrice": {
+              "symbol": "$",
+              "value": 49.99,
+              "currency": "USD",
+              "display": "$49.99"
+            },
+            "dealPercentOff": 54,
+            "dealType": "LIGHTNING_DEAL",
+            "dealIsLightningDeal": true,
+            "dealBadge": "Deal of the Day",
+            "dealStartTime": "2024-11-29T08:00:00Z",
+            "dealEndTime": "2024-11-29T23:59:59Z"
+          }
+        ],
+        "pageInfo": {
+          "currentPage": 1,
+          "totalPages": 15,
+          "totalResults": 298,
+          "hasNextPage": true,
+          "hasPrevPage": false
+        }
+      }
+    }
+  }
+}
+```
+
+---
+
+## Error handling
+
+If the `domain` value is not one of the supported marketplace codes, or if pagination parameters are negative, the API returns a `400` error. Ensure your `API-KEY` is included in every request.
+
+```json
+{
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Invalid domain value. Supported domains: US, UK, CA, DE, FR, IT, ES, AU, IN, MX, BR, JP, PL.",
+    "status": 400
+  }
+}
+```
+
+| Status | Meaning |
+|--------|---------|
+| `400` | Missing or invalid query parameters |
+| `401` | Missing or invalid `API-KEY` / Bearer token |
+| `429` | Rate limit exceeded |
+| `500` | Upstream Amazon error or internal server error |

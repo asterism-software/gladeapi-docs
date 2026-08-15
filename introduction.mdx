@@ -1,0 +1,122 @@
+---
+title: "Glade API: Amazon Data for Every Build"
+sidebarTitle: "Introduction"
+description: "Glade API is a normalized Amazon data platform covering products, search, offers, reviews, sellers, deals, and estimates across 13 marketplaces via REST, GraphQL, and MCP."
+---
+
+Glade API gives you a single, unified gateway to live Amazon data. Whether you are building a price monitor, a product research tool, an AI shopping agent, or a full e-commerce application, Glade API exposes every data domain you need — products, search, offers, reviews, sellers, deals, estimates, and more — through three first-class interfaces (REST, GraphQL, and MCP) across 13 Amazon marketplaces. One API key, one billing contract, zero glue code between regions or interfaces.
+
+## Data you can access
+
+<CardGroup cols={3}>
+  <Card title="Products" icon="box">
+    Full product detail pages — title, description, images, attributes, dimensions, ASIN metadata, and more.
+  </Card>
+  <Card title="Search" icon="magnifying-glass">
+    Keyword and category search results mirroring Amazon's live index, with ranking, filters, and pagination.
+  </Card>
+  <Card title="Reviews" icon="star">
+    Customer review listings, aggregate ratings, individual review text, and verified-purchase flags.
+  </Card>
+  <Card title="Offers" icon="tag">
+    New, used, and third-party seller offers with condition, price, fulfillment, and Prime eligibility.
+  </Card>
+  <Card title="Sellers" icon="store">
+    Seller profiles, ratings, feedback counts, and fulfillment capabilities for any Amazon merchant.
+  </Card>
+  <Card title="Deals" icon="bolt">
+    Lightning deals, coupons, and limited-time promotions surfaced in real time.
+  </Card>
+  <Card title="Estimates" icon="chart-line">
+    Sales-rank-to-volume estimates and category-level benchmarks for market-sizing and demand forecasting.
+  </Card>
+  <Card title="Categories" icon="layer-group">
+    Category trees, browse-node hierarchies, and best-seller rankings per node.
+  </Card>
+  <Card title="Best Sellers" icon="trophy">
+    Top-ranked ASINs by category, updated continuously to reflect Amazon's live best-seller lists.
+  </Card>
+</CardGroup>
+
+## Three interfaces, one contract
+
+Every Glade API interface — REST, GraphQL, and MCP — shares the same underlying data model, the same authentication scheme, and the same unit-based billing. Choose the interface that fits your stack; you can mix them freely within the same account.
+
+<Tabs>
+  <Tab title="REST">
+    The REST interface is the fastest way to get started. Pass your parameters as query strings and receive a normalized JSON response.
+
+    ```bash
+    curl "https://api.glade.dev/api/amazon/product?asin=B0D1XD1ZV3&domain=US" \
+      -H "API-KEY: glade_live_lookup_your_key"
+    ```
+
+    Every REST endpoint maps to a single Amazon data operation. See the [API Reference](/api-reference/product) for the full list of endpoints, parameters, and response schemas.
+  </Tab>
+  <Tab title="GraphQL">
+    The GraphQL interface lets you request exactly the fields you need in a single round trip. POST your query to `/api/graphql` with your API key in the header.
+
+    ```bash
+    curl -X POST "https://api.glade.dev/api/graphql" \
+      -H "API-KEY: glade_live_lookup_your_key" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "query": "query { amazonProduct(asin: \"B0D1XD1ZV3\", domain: US) { title price { value currency display } } }"
+      }'
+    ```
+
+    The GraphQL schema mirrors every REST operation and is fully introspectable. You can explore it interactively in the [GraphQL Playground](https://api.glade.dev/api/graphql).
+  </Tab>
+  <Tab title="MCP">
+    The MCP (Model Context Protocol) interface exposes all 17 Glade API operations as strongly-typed JSON-RPC tools at `/api/mcp`. It is designed for AI agents and LLM orchestration frameworks that support the MCP standard.
+
+    ```bash
+    curl -X POST "https://api.glade.dev/api/mcp" \
+      -H "API-KEY: glade_live_lookup_your_key" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "tools/call",
+        "params": {
+          "name": "amazon_product",
+          "arguments": { "asin": "B0D1XD1ZV3", "domain": "US" }
+        }
+      }'
+    ```
+
+    Each tool includes a machine-readable schema your agent can use to discover parameters and response shapes at runtime. See [Concepts: Interfaces](/concepts/interfaces) for a full tool listing.
+  </Tab>
+</Tabs>
+
+## 13 Marketplaces
+
+Pass the `domain` parameter to target any of the 13 supported Amazon marketplaces. Glade API handles currency conversion display, locale-specific product data, and the correct Amazon host automatically — you never need to manage regional endpoints yourself.
+
+| Domain | Marketplace | Currency |
+|--------|-------------|----------|
+| `US`   | amazon.com        | USD |
+| `UK`   | amazon.co.uk      | GBP |
+| `CA`   | amazon.ca         | CAD |
+| `DE`   | amazon.de         | EUR |
+| `FR`   | amazon.fr         | EUR |
+| `IT`   | amazon.it         | EUR |
+| `ES`   | amazon.es         | EUR |
+| `AU`   | amazon.com.au     | AUD |
+| `IN`   | amazon.in         | INR |
+| `MX`   | amazon.com.mx     | MXN |
+| `BR`   | amazon.com.br     | BRL |
+| `JP`   | amazon.co.jp      | JPY |
+| `PL`   | amazon.pl         | PLN |
+
+Price values in the response always include a `currency` code and a locale-formatted `display` string alongside the raw numeric `value`, so your application never needs to look up exchange rates or format strings per market.
+
+## Pricing
+
+Glade API charges **one unit per successful call**, regardless of whether you use REST, GraphQL, or MCP. Calls that return an error are never charged. Every new account starts with **100 free units** — no credit card required — so you can explore the full API before committing to a plan.
+
+View current plan limits and pricing at [gladeapi.com/pricing](https://gladeapi.com/pricing).
+
+<Note>
+  Glade API is Canopy-compatible — existing Canopy integrations work with minimal changes.
+</Note>

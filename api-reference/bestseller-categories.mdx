@@ -1,0 +1,111 @@
+---
+title: "GET /api/amazon/bestseller-categories — Category List"
+sidebarTitle: "Bestseller Categories"
+description: "Retrieve the list of Amazon best-seller categories available for a given marketplace. Use category IDs with the bestsellers endpoint."
+---
+
+The bestseller-categories endpoint returns a flat list of all Amazon best-seller categories available in a given marketplace. Use this endpoint to populate a category picker, build a category browse UI, or discover valid `categoryId` values to pass to the [bestsellers](/api-reference/bestsellers) endpoint.
+
+<Info>
+  Pass the `id` from this response as the `categoryId` parameter in the [bestsellers](/api-reference/bestsellers) endpoint to retrieve ranked products for that category.
+</Info>
+
+## Request
+
+<ParamField query="domain" type="string" default="US">
+  The Amazon marketplace to retrieve categories for. Supported values: `US`, `UK`, `CA`, `DE`, `FR`, `IT`, `ES`, `AU`, `IN`, `MX`, `BR`, `JP`, `PL`. Defaults to `US`.
+</ParamField>
+
+### Example request
+
+```bash
+curl "https://api.glade.dev/api/amazon/bestseller-categories?domain=US" \
+  -H "API-KEY: YOUR_API_KEY"
+```
+
+---
+
+## Response
+
+A successful response returns `data.amazonBestSellerCategories.categories` — a flat array of category objects for the requested marketplace.
+
+<ResponseField name="data.amazonBestSellerCategories" type="object">
+  <Expandable title="properties" defaultOpen>
+    <ResponseField name="categories" type="array">
+      Flat list of all available best-seller categories for the marketplace.
+
+      <Expandable title="categories[]">
+        <ResponseField name="id" type="string | null">
+          The category ID. Pass this value as `categoryId` in the bestsellers endpoint. May be `null` for top-level aggregate categories that do not have a distinct ID.
+        </ResponseField>
+        <ResponseField name="name" type="string | null">
+          The display name of the category (e.g., `"Electronics"`, `"Books"`). May be `null` if unavailable.
+        </ResponseField>
+        <ResponseField name="url" type="string | null">
+          The Amazon best-sellers URL for this category. May be `null` if unavailable.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example response
+
+```json
+{
+  "data": {
+    "amazonBestSellerCategories": {
+      "categories": [
+        {
+          "id": "172282",
+          "name": "Electronics",
+          "url": "https://www.amazon.com/Best-Sellers-Electronics/zgbs/electronics/"
+        },
+        {
+          "id": "283155",
+          "name": "Books",
+          "url": "https://www.amazon.com/Best-Sellers-Books/zgbs/books/"
+        },
+        {
+          "id": "2619525011",
+          "name": "Clothing, Shoes & Jewelry",
+          "url": "https://www.amazon.com/Best-Sellers-Clothing-Shoes-Jewelry/zgbs/fashion/"
+        },
+        {
+          "id": "1055398",
+          "name": "Toys & Games",
+          "url": "https://www.amazon.com/Best-Sellers-Toys-Games/zgbs/toys-and-games/"
+        },
+        {
+          "id": "284507",
+          "name": "Home & Kitchen",
+          "url": "https://www.amazon.com/Best-Sellers-Home-Kitchen/zgbs/home-garden/"
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
+## Error handling
+
+This endpoint only accepts a `domain` query parameter. If you pass an unsupported domain code, the API returns a `400` error. Make sure your `API-KEY` header is present on every request.
+
+```json
+{
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Invalid domain value. Supported domains: US, UK, CA, DE, FR, IT, ES, AU, IN, MX, BR, JP, PL.",
+    "status": 400
+  }
+}
+```
+
+| Status | Meaning |
+|--------|---------|
+| `400` | Invalid or unsupported `domain` value |
+| `401` | Missing or invalid `API-KEY` / Bearer token |
+| `429` | Rate limit exceeded |
+| `500` | Upstream Amazon error or internal server error |

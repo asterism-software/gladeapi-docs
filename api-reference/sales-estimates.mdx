@@ -1,0 +1,101 @@
+---
+title: "GET /api/amazon/product/sales — Amazon Sales Estimates"
+sidebarTitle: "Sales Estimates"
+description: "Get estimated weekly, monthly, and annual unit sales for an Amazon product. Useful for market sizing, demand analysis, and competitive research."
+---
+
+Retrieve estimated unit sales volume for any Amazon product across three time horizons — weekly, monthly, and annual. These figures are ideal for market sizing, demand forecasting, competitive benchmarking, and identifying high-velocity SKUs. You can look up any product by ASIN, GTIN, or URL.
+
+<Note>
+  Sales estimates are statistical approximations, not exact figures. Use them as directional indicators for demand analysis.
+</Note>
+
+## Request
+
+```http
+GET https://api.glade.dev/api/amazon/product/sales
+```
+
+### Query Parameters
+
+<ParamField query="domain" type="string" default="US">
+  The Amazon marketplace to query. Accepted values: `US` `UK` `CA` `DE` `FR` `IT` `ES` `AU` `IN` `MX` `BR` `JP` `PL`. Defaults to `US` when omitted.
+</ParamField>
+
+<ParamField query="asin" type="string">
+  The Amazon Standard Identification Number (e.g. `B09XS7JWHH`). Provide at least one of `asin`, `url`, or `gtin`.
+</ParamField>
+
+<ParamField query="url" type="string">
+  A full Amazon product URL. Provide at least one of `asin`, `url`, or `gtin`.
+</ParamField>
+
+<ParamField query="gtin" type="string">
+  A Global Trade Item Number (barcode). Provide at least one of `asin`, `url`, or `gtin`.
+</ParamField>
+
+## Response
+
+Sales estimate data is returned under `data.amazonProduct.salesEstimate`.
+
+<ResponseField name="data.amazonProduct.salesEstimate" type="object">
+  <Expandable title="salesEstimate fields" defaultOpen>
+    <ResponseField name="weeklyUnitSales" type="integer">
+      Estimated number of units sold in a typical week.
+    </ResponseField>
+    <ResponseField name="monthlyUnitSales" type="integer">
+      Estimated number of units sold in a typical month.
+    </ResponseField>
+    <ResponseField name="annualUnitSales" type="integer">
+      Estimated number of units sold over a full year.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response
+
+```json
+{
+  "data": {
+    "amazonProduct": {
+      "salesEstimate": {
+        "weeklyUnitSales": 1840,
+        "monthlyUnitSales": 7950,
+        "annualUnitSales": 95400
+      }
+    }
+  }
+}
+```
+
+## Error Handling
+
+All errors follow a consistent envelope. The HTTP status code mirrors the `code` field inside the `errors` array.
+
+| Status | Meaning |
+|--------|---------|
+| `400`  | Bad request — a required parameter is missing or malformed. |
+| `401`  | Unauthorized — your API key is missing or invalid. |
+| `402`  | Payment required — your plan limit has been reached. |
+| `429`  | Too many requests — you have exceeded the rate limit for your plan. |
+| `502`  | Bad gateway — Amazon returned an unexpected response; retry with exponential back-off. |
+
+```json
+{
+  "success": false,
+  "errors": [
+    {
+      "code": 400,
+      "message": "Missing required parameter: asin, url, or gtin must be provided"
+    }
+  ]
+}
+```
+
+## curl Example
+
+```bash
+curl --request GET \
+  --url 'https://api.glade.dev/api/amazon/product/sales?asin=B09XS7JWHH&domain=US' \
+  --header 'API-KEY: YOUR_API_KEY'
+```

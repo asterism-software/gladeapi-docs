@@ -1,0 +1,89 @@
+---
+title: "Rate Limits and Concurrency in Glade API"
+sidebarTitle: "Rate Limits"
+description: "Understand Glade API rate limits, concurrency caps, and how to handle 429 errors gracefully in your integration."
+---
+
+Glade API enforces per-plan rate limits to ensure fair access for all users. If you exceed your rate limit or concurrency cap, you receive a `429` response — your unit balance is not affected.
+
+---
+
+## Limits by plan
+
+| Plan | Requests/min | Concurrent |
+|---|---|---|
+| **Hobby** | 30 | 2 |
+| **Pay as you go** | 120 | 10 |
+| **Premium 20K** | 600 | 50 |
+| **Enterprise** | 1,200 | 100 |
+
+Rate limits are enforced at the API key level. Concurrent request caps count the number of in-flight requests at any given moment — requests that have been sent but whose responses have not yet been received.
+
+---
+
+## Rate limit errors
+
+When you exceed either your requests-per-minute limit or your concurrency cap, Glade API returns an HTTP `429` with a JSON error body:
+
+```json
+{
+  "success": false,
+  "errors": [
+    { "code": 429, "message": "Rate limit exceeded. Please retry after 1 second." }
+  ]
+}
+```
+
+`429` responses are never billed. The failed request consumes zero units and does not affect your quota balance.
+
+---
+
+## Handling 429s gracefully
+
+The most reliable way to handle rate limit errors is to implement exponential backoff with jitter. This spreads retried requests over time and avoids a thundering herd when multiple requests hit the limit simultaneously.
+
+```javascript
+async function fetchWithRetry(url, options, retries = 3) {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    const res = await fetch(url, options);
+    if (res.status !== 429) return res;
+    const delay = Math.pow(2, attempt) * 500 + Math.random() * 200;
+    await new Promise(r => setTimeout(r, delay));
+  }
+  throw new Error('Max retries exceeded');
+}
+```
+
+This implementation backs off for approximately 500 ms, 1,100 ms, and 2,300 ms (with jitter) across three attempts before giving up. Adjust the base delay and retry count to match your latency tolerance.
+
+<Tip>
+  For high-volume workloads, consider upgrading to a higher plan tier to get more headroom before hitting rate limits.
+</Tip>
+
+---
+
+## Concurrent request limits
+
+Each plan caps the number of in-flight requests at once. If you fire more concurrent requests than your plan allows, the excess requests receive a `429` immediately.
+
+When processing large batches — for example, enriching a catalogue of thousands of ASINs — use a concurrency limiter in your code to stay within your plan's cap. In Node.js, [`p-limit`](https://github.com/sindresorhus/p-limit) makes this straightforward:
+
+```javascript
+import pLimit from 'p-limit';
+const limit = pLimit(10); // match your plan's concurrency cap
+
+const results = await Promise.all(
+  asins.map(asin => limit(() => fetchProduct(asin)))
+);
+```
+
+Set the `pLimit` value to your plan's concurrent request cap:
+
+| Plan | Recommended `pLimit` value |
+|---|---|
+| Hobby | `2` |
+| Pay as you go | `10` |
+| Premium 20K | `50` |
+| Enterprise | `100` |
+
+Keeping your concurrency at or below the cap means every request is accepted on the first attempt, your throughput is maximised, and you avoid the latency cost of retrying `429` errors.

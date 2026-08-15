@@ -1,0 +1,135 @@
+---
+title: "Authenticate Requests to Glade API"
+sidebarTitle: "Authentication"
+description: "Glade API uses API keys for authentication. Learn how to create a key, pass it in requests, and handle authentication errors."
+---
+
+Glade API authenticates every request with an API key. You generate a reveal-once key from the dashboard and include it in one of the supported headers on each call. There are no session tokens, OAuth flows, or cookies — every request is independently authenticated, making Glade API straightforward to use from scripts, server-side code, and AI agents alike.
+
+## Creating an API key
+
+<Steps>
+  <Step title="Sign in to the dashboard">
+    Go to [gladeapi.com/auth/login](https://gladeapi.com/auth/login?next=/dashboard) and sign in to your account. If you do not have an account yet, sign up for free — no credit card required.
+  </Step>
+  <Step title="Navigate to API Keys">
+    From the dashboard sidebar, click **API Keys**. You will see a list of any existing keys along with their creation date and last-used timestamp.
+  </Step>
+  <Step title="Create a new key">
+    Click **New key**, optionally give it a descriptive label (for example, `production-price-monitor`), and confirm. Your new key is displayed **one time only** — copy it immediately before closing the dialog.
+  </Step>
+  <Step title="Store the key securely">
+    Paste the key into an environment variable, a `.env` file that is excluded from version control, or your team's secrets manager (for example, AWS Secrets Manager, HashiCorp Vault, or GitHub Actions secrets). Never hard-code it in source files.
+  </Step>
+</Steps>
+
+<Warning>
+  Your API key is revealed only once at creation time. If you lose it, you cannot recover it — generate a new key from the dashboard and revoke the old one.
+</Warning>
+
+## Passing your key
+
+Glade API accepts your key in three header formats. Use whichever format is most convenient for your stack; all three are equivalent in terms of authentication and billing.
+
+**1. `API-KEY` header (recommended)**
+
+The simplest and most explicit option. Add an `API-KEY` header to every request:
+
+```bash
+curl "https://api.glade.dev/api/amazon/product?asin=B0D1XD1ZV3&domain=US" \
+  -H "API-KEY: glade_live_lookup_your_key"
+```
+
+**2. Bearer token (`Authorization` header)**
+
+If your HTTP client or framework uses the standard Bearer token pattern, pass your key as the token value:
+
+```bash
+curl "https://api.glade.dev/api/amazon/product?asin=B0D1XD1ZV3&domain=US" \
+  -H "Authorization: Bearer glade_live_lookup_your_key"
+```
+
+**3. MCP-specific headers**
+
+When connecting via the MCP interface, two additional header names are also accepted alongside `API-KEY` and `Authorization: Bearer`:
+
+```bash
+# Using GLADE-API-KEY
+curl -X POST "https://api.glade.dev/api/mcp" \
+  -H "GLADE-API-KEY: glade_live_lookup_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{ ... }'
+
+# Using X-API-KEY
+curl -X POST "https://api.glade.dev/api/mcp" \
+  -H "X-API-KEY: glade_live_lookup_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{ ... }'
+```
+
+<Note>
+  Conflicting credentials — for example, sending both an `API-KEY` header and an `Authorization` header with different key values in the same request — are rejected with a `400 Bad Request` error. Always pass a single key in a single header per request.
+</Note>
+
+## Authentication errors
+
+When authentication fails, Glade API returns a JSON error envelope with a `success: false` flag and a structured `errors` array:
+
+```json
+{
+  "success": false,
+  "errors": [
+    { "code": 401, "message": "Invalid or missing API key" }
+  ]
+}
+```
+
+The HTTP status code in the response tells you the category of the problem:
+
+| HTTP Status | Meaning | Resolution |
+|-------------|---------|------------|
+| `401 Unauthorized` | The API key is missing, malformed, or does not match any active key on your account. | Check that you copied the key correctly and that it has not been revoked. |
+| `402 Payment Required` | Your account has exhausted its unit quota. | Upgrade your plan or purchase additional units at [gladeapi.com/pricing](https://gladeapi.com/pricing). |
+| `429 Too Many Requests` | You have exceeded the request rate limit for your plan tier. | Back off and retry using exponential backoff. The response includes a `Retry-After` header indicating when you may resume. |
+
+Calls that return any of these errors are **never charged** — you only consume units on successful responses.
+
+## Keeping keys secure
+
+<Tip>
+  Follow these best practices to keep your API keys safe:
+
+  - **Use environment variables.** Load your key from the environment rather than hard-coding it in source files.
+  - **Never commit keys to version control.** Add `.env` to your `.gitignore` and audit your repository history if you suspect a key was accidentally committed.
+  - **Rotate keys if exposed.** If a key is leaked, revoke it from the dashboard immediately and generate a replacement — existing code only needs a one-line environment variable update.
+  - **Use separate keys per environment.** Create distinct keys for development, staging, and production so you can revoke one without affecting the others.
+  - **Set descriptive labels.** Name each key after its purpose (e.g., `ci-tests`, `prod-price-monitor`) so you can identify and revoke the right one quickly.
+</Tip>
+
+Set your key as an environment variable so you can reference it consistently across scripts:
+
+```bash
+export GLADE_API_KEY=glade_live_lookup_your_key
+```
+
+Then use `$GLADE_API_KEY` in any script or command without exposing the raw value:
+
+```bash
+curl "https://api.glade.dev/api/amazon/product?asin=B0D1XD1ZV3&domain=US" \
+  -H "API-KEY: $GLADE_API_KEY"
+```
+
+In application code, read the key from the environment at startup rather than at call time to catch misconfiguration early:
+
+```python
+import os
+import requests
+
+GLADE_API_KEY = os.environ["GLADE_API_KEY"]  # raises KeyError if unset
+
+response = requests.get(
+    "https://api.glade.dev/api/amazon/product",
+    params={"asin": "B0D1XD1ZV3", "domain": "US"},
+    headers={"API-KEY": GLADE_API_KEY},
+)
+```
