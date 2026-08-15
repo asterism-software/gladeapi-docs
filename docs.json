@@ -3,11 +3,25 @@
   "name": "Glade API",
   "theme": "luma",
   "colors": {
-    "primary": "#ef7025",
-    "light": "#eec9bc",
-    "dark": "#4fa1ab"
+    "primary": "#447B39",
+    "light": "#8AB54C",
+    "dark": "#336B36"
   },
-  "favicon": "/favicon.svg",
+  "logo": {
+    "light": "/logo/glade-light.png",
+    "dark": "/logo/glade-dark.png",
+    "href": "https://gladeapi.com"
+  },
+  "favicon": "/glade-icon.png",
+  "fonts": {
+    "family": "Inter"
+  },
+  "background": {
+    "color": {
+      "light": "#FCFDF8",
+      "dark": "#102D1C"
+    }
+  },
   "navigation": {
     "tabs": [
       {
